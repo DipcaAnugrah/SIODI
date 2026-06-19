@@ -1,0 +1,34 @@
+# ============================================================
+#  requirements_gui.txt — Dependensi SiODI GUI Desktop
+#  Sistem OCR Dokumen Identitas — v5.7
+# ============================================================
+#
+#  Cara instal semua dependensi:
+#    pip install -r requirements_gui.txt
+#
+#  Cara instal Tesseract OCR (wajib, di luar pip):
+#    Windows : https://github.com/UB-Mannheim/tesseract/wiki
+#              (tambahkan bahasa Indonesia saat instalasi)
+#    Linux   : sudo apt install tesseract-ocr tesseract-ocr-ind
+#    macOS   : brew install tesseract tesseract-lang
+# ============================================================
+
+# ── GUI Framework ──────────────────────────────────────────
+customtkinter>=5.2.2          # Framework GUI modern berbasis Tkinter
+# tkinter → BAWAAN Python, TIDAK perlu pip install
+
+# ── OCR Engine ─────────────────────────────────────────────
+pytesseract>=0.3.10           # Python wrapper untuk Tesseract OCR
+
+# ── Computer Vision & Image Processing ─────────────────────
+opencv-python>=4.8.0          # OpenCV: preprocessing, deskew, Hough Lines
+Pillow>=10.0.0                # PIL: buka gambar, konversi format
+
+# ── Utilitas ───────────────────────────────────────────────
+tqdm>=4.66.0                  # Progress bar di terminal (CLI mode)
+numpy>=1.24.0                 # Array numerik untuk OpenCV
+
+# ── Build ke .exe (opsional, hanya untuk packaging) ────────
+# pyinstaller>=6.0.0          # Aktifkan jika ingin build .exe
+#                             # pip install pyinstaller
+#                             # lalu: pyinstaller build_exe.spec
