@@ -1,0 +1,24 @@
+{
+  "_keterangan": {
+    "input": "Folder utama berisi subfolder dokumen",
+    "lang": "Kode bahasa Tesseract: ind / ind+eng",
+    "export": "Format metadata: json / csv / both",
+    "file_template": "Template nama file. Var: {jenis},{nama},{nik},...",
+    "folder_template": "Template subfolder. Gunakan / untuk bertingkat.",
+    "separator": "Pemisah kata: _ atau -",
+    "deskew": "true = koreksi kemiringan gambar sebelum OCR",
+    "dry_run": "true = preview saja, file TIDAK dipindah",
+    "ground_truth": "Path CSV ground truth untuk F1. null = lewati.",
+    "tesseract_path": "Path tesseract.exe (Windows). null = dari PATH."
+  },
+  "input": "Dokumen",
+  "lang": "ind",
+  "export": "both",
+  "file_template": "{jenis}_{nama}",
+  "folder_template": "{JENIS}/{jenis}_{nama}",
+  "separator": "_",
+  "deskew": true,
+  "dry_run": false,
+  "ground_truth": null,
+  "tesseract_path": null
+}
