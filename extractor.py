@@ -223,7 +223,8 @@ def extract_fields(
         relevant = {
             "ktp": ["nama", "nik", "tempat_lahir", "tanggal_lahir",
                     "jenis_kelamin", "alamat"],
-            "sim": ["no_sim", "nama", "tanggal_lahir", "alamat"],
+            "sim": ["no_sim", "nama", "tempat_lahir", "tanggal_lahir",
+                    "jenis_kelamin", "alamat"],
         }.get(doc_type, ["nama"])
 
     filled = sum(1 for k in relevant if fields.get(k))
@@ -263,7 +264,7 @@ def _extract_nomor_kk(text: str) -> str:
     Nomor KK di kartu fisik dicetak dengan font SANGAT BESAR di baris atas,
     format: "No. XXXXXXXXXXXXXXXX" atau "NOMOR KK XXXXXXXXXXXXXXXX"
 
-    Bug yang diperbaiki di v5.8.0:
+    Bug yang diperbaiki di v6.0:
     ─────────────────────────────
     Bug 1 — Pola A terlalu longgar, menangkap teks setelah NIK/tanggal:
       Regex lama `N[o0ua][. -]*` juga cocok dengan "No" dalam kata seperti

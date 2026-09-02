@@ -30,7 +30,7 @@ Perbaikan v5.7.5:
       * Hanya aktif untuk sudut >10° (kemiringan kecil tetap ditangani Pass 1+2)
   - Perbaiki ekstraksi alamat SIM: format bernomor urut dan NO./RT. di akhir baris
 
-Perbaikan v5.8.0 — Koreksi Bayangan (Shadow Correction):
+Perbaikan v5.8 — Koreksi Bayangan (Shadow Correction):
   - Tambah fungsi remove_shadow() berbasis morphological closing untuk
     mengoreksi pencahayaan tidak merata (bayangan separuh, vignette, gradien).
     Khusus mengatasi masalah foto SIM yang tertutupi bayangan di separuh gambar.
@@ -42,7 +42,7 @@ Perbaikan v5.8.0 — Koreksi Bayangan (Shadow Correction):
   - CLAHE tileGridSize dinaikkan dari (8,8) → (16,16) agar lebih efektif untuk
     gambar beresolusi tinggi dari kamera HP.
 
-Perbaikan v5.8.1 — Perbaikan Deteksi Bayangan SIM:
+Perbaikan v6.0 — Perbaikan Deteksi Bayangan SIM:
   - Turunkan threshold has_uneven_illumination() dari 55.0 → 30.0 agar
     bayangan halus/gradual juga terdeteksi.
   - Tambah deteksi quadrant: bagi gambar 4 kuadran, bandingkan max-min
@@ -70,7 +70,7 @@ log = logging.getLogger("otomatisasi_dokumen")
 
 
 # =============================================================================
-# MODULE 3A — KOREKSI BAYANGAN (v5.8.0)
+# MODULE 3A — KOREKSI BAYANGAN (v6.0)
 #
 # Mengatasi masalah pencahayaan tidak merata pada foto SIM/KTP/KK:
 #   - Bayangan separuh (setengah kartu gelap, setengah terang)
@@ -89,7 +89,7 @@ def has_uneven_illumination(gray, threshold: float = 30.0) -> bool:
     """
     Deteksi apakah gambar memiliki pencahayaan tidak merata (bayangan/gradien).
 
-    Perbaikan v5.8.1: threshold diturunkan dari 55.0 → 30.0 dan ditambah
+    Perbaikan v6.0: threshold diturunkan dari 55.0 → 30.0 dan ditambah
     deteksi quadrant agar bayangan halus/diagonal juga terdeteksi.
 
     Tiga level deteksi:
@@ -147,7 +147,7 @@ def remove_shadow(gray, kernel_pct: float = 0.15, norm_target: float = 220.0) ->
     Koreksi pencahayaan tidak merata (bayangan separuh, vignette, gradien)
     menggunakan teknik background subtraction via Gaussian Blur.
 
-    Perbaikan v5.8.2 — Overhaul total dari versi sebelumnya:
+    Perbaikan v6.0 — Overhaul total dari versi sebelumnya:
       - Ganti Morphological Closing → Gaussian Blur. Gaussian blur lebih
         efektif mengestimasi background dari bayangan gradual/halus yang
         umum pada foto dokumen dari kamera HP.
@@ -176,7 +176,7 @@ def remove_shadow(gray, kernel_pct: float = 0.15, norm_target: float = 220.0) ->
         np.ndarray: Gambar grayscale terkoreksi (uint8), pencahayaan merata.
     """
     h, w = gray.shape
-    # Kernel proporsional terhadap resolusi (v5.8.2)
+    # Kernel proporsional terhadap resolusi (v6.0)
     # 15% dimensi terpanjang, min 51, max 255
     ksize = max(51, min(255, int(max(h, w) * kernel_pct)))
     # Pastikan ganjil (syarat GaussianBlur)
@@ -908,7 +908,7 @@ def preprocess_image(image_path: str, use_deskew: bool = True) -> list:
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # ── v5.8.0: Koreksi bayangan (shadow correction) ──────────────────────
+    # ── v6.0: Koreksi bayangan (shadow correction) ──────────────────────
     # Deteksi pencahayaan tidak merata (bayangan separuh, gradien, vignette).
     # Jika terdeteksi, hasilkan varian ke-5 "shadow" dari gambar yang sudah
     # dikoreksi. Varian ini sangat membantu untuk foto SIM/KTP dengan bayangan.
@@ -942,7 +942,7 @@ def preprocess_image(image_path: str, use_deskew: bool = True) -> list:
         ("raw_gray", gray),
     ]
 
-    # D. Shadow variants — MULTIPLE variants dari gambar shadow-corrected (v5.8.2)
+    # D. Shadow variants — MULTIPLE variants dari gambar shadow-corrected (v6.0)
     # Satu varian shadow saja tidak cukup — Tesseract sensitif terhadap
     # preprocessing, sehingga kita perlu mencoba beberapa teknik pada gambar
     # yang sudah dikoreksi bayangan.
@@ -979,7 +979,7 @@ def preprocess_image(image_path: str, use_deskew: bool = True) -> list:
         shadow_eq = cv2.equalizeHist(gray_shadow)
         variants.append(("shadow_eq", shadow_eq))
 
-    # E. Gamma correction — untuk gambar sangat gelap (v5.8.1)
+    # E. Gamma correction — untuk gambar sangat gelap (v6.0)
     # Gambar dengan bayangan parah sering memiliki mean intensity rendah.
     # Gamma correction mencerahkan area gelap tanpa over-expose area terang.
     mean_intensity = float(gray.mean())
@@ -1029,15 +1029,15 @@ OCR_WORKERS = 4
 
 
 def extract_text(image_path: str, lang: str = "ind",
-                use_deskew: bool = True) -> tuple:
+                use_deskew: bool = True, stop_event=None) -> tuple:
     """
     Menjalankan OCR dengan 12–18 kombinasi secara PARALEL.
 
-    Optimasi v5.7-Perf: Semua kombinasi dijalankan bersamaan menggunakan
+    Optimasi v5.8-Perf: Semua kombinasi dijalankan bersamaan menggunakan
     ThreadPoolExecutor (OCR_WORKERS thread). Ini mengurangi waktu per file
     dari ~12x ke ~1-2x waktu OCR tunggal pada hardware multi-core.
 
-    Perbaikan v5.8.1: Jika skor OCR terbaik sangat rendah (< 50) dan varian
+    Perbaikan v6.0: Jika skor OCR terbaik sangat rendah (< 50) dan varian
     shadow belum aktif, paksa jalankan shadow correction + OCR ulang sebagai
     fallback. Ini menangani kasus bayangan yang tidak terdeteksi oleh
     has_uneven_illumination() (threshold edge case).
@@ -1048,6 +1048,7 @@ def extract_text(image_path: str, lang: str = "ind",
         image_path (str): Path ke file gambar.
         lang       (str): Kode bahasa Tesseract. Default "ind" (Indonesia).
                           Gunakan "ind+eng" untuk dokumen campuran bahasa.
+        stop_event      : Opsional threading.Event untuk abort awal.
 
     Returns:
         tuple:
@@ -1055,6 +1056,9 @@ def extract_text(image_path: str, lang: str = "ind",
             all_texts  (list[str]) : Semua hasil OCR (untuk voting nama).
         Mengembalikan ("", []) jika preprocessing gagal.
     """
+    if stop_event and stop_event.is_set():
+        return "", []
+
     variants = preprocess_image(image_path, use_deskew=use_deskew)
     if not variants:
         return "", []
@@ -1067,6 +1071,8 @@ def extract_text(image_path: str, lang: str = "ind",
     ]
 
     def _run_ocr(label, img_v, psm):
+        if stop_event and stop_event.is_set():
+            return None
         config = f"--oem 3 --psm {psm} -l {lang}"
         try:
             text  = pytesseract.image_to_string(img_v, config=config)
@@ -1082,6 +1088,10 @@ def extract_text(image_path: str, lang: str = "ind",
         futures = {executor.submit(_run_ocr, lbl, img, psm): (lbl, psm)
                    for lbl, img, psm in tasks}
         for future in as_completed(futures):
+            if stop_event and stop_event.is_set():
+                for f in futures:
+                    f.cancel()
+                break
             res = future.result()
             if res is not None:
                 results.append(res)
@@ -1092,7 +1102,7 @@ def extract_text(image_path: str, lang: str = "ind",
     results.sort(reverse=True)
     best_score = results[0][0]
 
-    # ── v5.8.2: Fallback — paksa shadow correction jika OCR masih gagal ───
+    # ── v6.0: Fallback — paksa shadow correction jika OCR masih gagal ───
     # Dijalankan jika skor terbaik sangat rendah, baik shadow variant sudah
     # aktif atau belum. Jika shadow sudah aktif tapi skor tetap rendah,
     # berarti kernel/teknik pertama tidak efektif → coba kernel lebih besar

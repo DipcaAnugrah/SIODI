@@ -18,7 +18,7 @@ Fitur GUI:
   • Pengaturan    — konfigurasi Tesseract, template, separator, tema
   • Log Viewer    — tampilkan log sesi saat ini & riwayat
 
-Sistem: SiODI v5.7 | Python + CustomTkinter | KTP / KK / SIM
+Sistem: SiODI v6.0 | Python + CustomTkinter | KTP / KK / SIM
 """
 
 import os, sys, json, threading, queue, logging, subprocess, webbrowser, io
@@ -40,7 +40,7 @@ from tkinter import filedialog, messagebox
 # ═══════════════════════════════════════════════════════════════════════════════
 APP_NAME     = "SiODI"
 APP_SUBTITLE = "Sistem OCR Dokumen Identitas"
-APP_VERSION  = "5.7"
+APP_VERSION  = "6.0"
 WINDOW_W, WINDOW_H = 1280, 780
 
 # Warna brand — Tema Terang Modern
@@ -595,8 +595,8 @@ class BatchPage(ctk.CTkFrame):
         self.btn_stop.configure(state="disabled")
 
         success_rate = metrics.get("success_rate_pct", 0)
-        total        = metrics.get("total_files", 0)
-        valid        = metrics.get("total_valid", 0)
+        total        = metrics.get("total_dokumen", 0)
+        valid        = metrics.get("dokumen_valid", 0)
 
         self.lbl_status.configure(
             text=f"✅ Selesai — {valid}/{total} berhasil ({success_rate:.1f}%)",

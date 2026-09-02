@@ -6,7 +6,11 @@ Menangani:
   - Ekspor metadata JSON + CSV (Modul 8)
   - Evaluasi statistik sistem: success rate, distribusi, field completeness (Modul 9A)
   - Evaluasi konsistensi penamaan file / naming convention (Modul 9B)
-  - Evaluasi Precision / Recall / F1-Score per field vs ground truth (Modul 9C)
+  - [Modul 9C-A] Evaluasi Klasifikasi Dokumen: Acc/P/R/F1 per kelas (KTP/KK/SIM/UNKNOWN)
+                 → calculate_classification_metrics() + print/export_classification_report()
+  - [Modul 9C-B] Evaluasi Ekstraksi Field OCR: P/R/F1 per field vs ground truth
+                 → calculate_ocr_f1() + print/export_f1_report()
+                 CATATAN: Accuracy TIDAK dihitung di tahap ini (Information Extraction)
   - Evaluasi efisiensi waktu vs estimasi proses manual (Modul 9D)
   - Simpan semua metrik ke JSON (_save_metrics)
 """
@@ -26,10 +30,6 @@ def _html_rows(records: list) -> str:
         bdg   = ('<span class="badge ok">VALID</span>' if st == "VALID"
                  else '<span class="badge dry">PREVIEW</span>' if "DRY" in st
                  else '<span class="badge err">ERROR</span>')
-        conf  = r.get("confidence_scores", {})
-        cavg  = round(sum(conf.values()) / len(conf)) if conf else None
-        cbar  = (f'<div class="cbar"><div class="cfill" style="width:{cavg}%"></div>'
-                 f'</div><span class="cpct">{cavg}%</span>' if cavg is not None else "—")
         fc    = round(r.get("field_completeness", 0) * 100)
         jenis = r.get("jenis_dokumen", "")
 
@@ -64,7 +64,6 @@ def _html_rows(records: list) -> str:
             f'<td>{col_nama}{extra}</td>'
             f'<td>{col_nik}</td>'
             f'<td class="center">{fc}%</td>'
-            f'<td class="center">{cbar}</td>'
             f'<td class="center">{r.get("waktu_proses","")}</td>'
             f'</tr>'
         )
@@ -93,13 +92,23 @@ def _html_dist(dist: dict, total: int) -> str:
 
 
 def _html_f1_section(f1_r: dict) -> str:
-    """Bangun seksi tabel F1-Score untuk laporan HTML (kosong jika tidak ada GT)."""
+    """
+    Bangun seksi tabel evaluasi Precision/Recall/F1-Score untuk laporan HTML.
+
+    Fungsi ini untuk TAHAP 2 (Ekstraksi Field OCR). Sesuai metodologi
+    Information Extraction, TIDAK menghitung Accuracy atau TN — hanya
+    TP, FP, FN yang relevan untuk membandingkan hasil ekstraksi vs ground truth.
+
+    Accuracy hanya ditampilkan di _html_classification_section() (Tahap 1).
+    """
     if not f1_r or not f1_r.get("per_field"):
         return ""
+    # Catatan: 'jenis_dokumen' dihapus dari labels karena sudah dievaluasi
+    # di tahap klasifikasi (_html_classification_section). Tidak duplikasi.
     labels = {
         "nama": "Nama", "nik": "NIK", "tempat_lahir": "Tempat Lahir",
         "tanggal_lahir": "Tanggal Lahir", "jenis_kelamin": "Jenis Kelamin",
-        "jenis_dokumen": "Jenis Dokumen", "alamat": "Alamat",
+        "alamat": "Alamat",
         "nomor_kk": "Nomor KK", "nama_kepala": "Nama Kepala",
         "desa_kelurahan": "Desa/Kelurahan", "kecamatan": "Kecamatan",
         "kabupaten_kota": "Kab/Kota", "provinsi": "Provinsi",
@@ -108,6 +117,7 @@ def _html_f1_section(f1_r: dict) -> str:
     rows = []
     for fld, lbl in labels.items():
         m = f1_r["per_field"].get(fld, {})
+        # Hanya tampilkan field yang punya minimal satu observasi (TP+FP+FN > 0)
         if not m or (m.get("tp", 0) + m.get("fp", 0) + m.get("fn", 0)) == 0:
             continue
         f1v = m.get("f1_score", 0)
@@ -140,9 +150,11 @@ def _html_f1_section(f1_r: dict) -> str:
     )
     return (
         '<div class="section">'
-        '<h2 style="color:#6a1b9a">Evaluasi Precision / Recall / F1-Score</h2>'
+        '<h2 style="color:#6a1b9a">Tahap 2 — Evaluasi Ekstraksi Field OCR</h2>'
         f'<p class="sub">Ground truth: {f1_r.get("total_ground_truth", 0)} dokumen dievaluasi '
-        f'({f1_r.get("dokumen_dievaluasi", 0)} ter-match).</p>'
+        f'({f1_r.get("dokumen_dievaluasi", 0)} ter-match). '
+        f'Metrik: <b>Precision / Recall / F1-Score</b> '
+        f'(Information Extraction — Accuracy tidak digunakan di tahap ini).</p>'
         f'{unmatched_note}'
         '<table><thead><tr><th>Field</th><th>Precision</th><th>Recall</th>'
         '<th>F1-Score</th><th>TP</th><th>FP</th><th>FN</th></tr></thead>'
@@ -245,6 +257,88 @@ def _html_nokk_analysis_section(f1_r: dict) -> str:
 """
 
 
+<<<<<<< HEAD
+=======
+def _html_classification_section(cls_r: dict) -> str:
+    """
+    Bangun seksi evaluasi klasifikasi dokumen untuk laporan HTML.
+
+    Fungsi ini untuk TAHAP 1 (Identifikasi & Pengarsipan Dokumen). Menggunakan
+    confusion matrix one-vs-rest per kelas (KTP/KK/SIM/UNKNOWN) untuk
+    menghitung Accuracy, Precision, Recall, F1-Score.
+
+    Accuracy HANYA ditampilkan di seksi ini, BUKAN di evaluasi ekstraksi OCR.
+    """
+    if not cls_r or not cls_r.get("per_class"):
+        return ""
+
+    classes      = ["ktp", "kk", "sim", "unknown"]
+    class_labels = {"ktp": "KTP", "kk": "KK", "sim": "SIM", "unknown": "UNKNOWN"}
+    rows = []
+
+    for cls in classes:
+        m = cls_r["per_class"].get(cls, {})
+        if not m:
+            continue
+        f1v     = m.get("f1_score", 0)
+        accv    = m.get("accuracy", 0)
+        acc_pct = int(accv * 100)
+        rows.append(
+            f'<tr><td><b>{class_labels[cls]}</b></td>'
+            f'<td class="center">{m.get("precision", 0):.2f}</td>'
+            f'<td class="center">{m.get("recall", 0):.2f}</td>'
+            f'<td class="center"><div class="cbar"><div class="cfill" '
+            f'style="width:{int(f1v * 100)}%;background:#9c27b0"></div></div>'
+            f'<span class="cpct">{f1v:.2f}</span></td>'
+            f'<td class="center"><div class="cbar"><div class="cfill" '
+            f'style="width:{acc_pct}%;background:#00897b"></div></div>'
+            f'<span class="cpct">{accv:.2f}</span></td>'
+            f'<td class="center">{m.get("tp", 0)}</td>'
+            f'<td class="center">{m.get("tn", 0)}</td>'
+            f'<td class="center">{m.get("fp", 0)}</td>'
+            f'<td class="center">{m.get("fn", 0)}</td></tr>'
+        )
+
+    mf1         = cls_r.get("macro_f1_score", 0)
+    macc        = cls_r.get("macro_accuracy", 0)
+    macc_pct    = int(macc * 100)
+    overall_acc = cls_r.get("overall_accuracy", 0)
+    total_benar = cls_r.get("total_benar", 0)
+    total_gt    = cls_r.get("total_ground_truth", 0)
+
+    rows.append(
+        f'<tr style="font-weight:bold;background:#e8f5e9"><td>MACRO AVG</td>'
+        f'<td class="center">{cls_r.get("macro_precision", 0):.2f}</td>'
+        f'<td class="center">{cls_r.get("macro_recall", 0):.2f}</td>'
+        f'<td class="center"><div class="cbar"><div class="cfill" '
+        f'style="width:{int(mf1 * 100)}%;background:#9c27b0"></div></div>'
+        f'<span class="cpct">{mf1:.2f}</span></td>'
+        f'<td class="center"><div class="cbar"><div class="cfill" '
+        f'style="width:{macc_pct}%;background:#00897b"></div></div>'
+        f'<span class="cpct">{macc:.2f}</span></td>'
+        f'<td class="center">—</td><td class="center">—</td>'
+        f'<td class="center">—</td><td class="center">—</td></tr>'
+    )
+
+    return (
+        '<div class="section">'
+        '<h2 style="color:#2e7d32">Tahap 1 — Evaluasi Klasifikasi Dokumen</h2>'
+        f'<p class="sub">Dievaluasi: {cls_r.get("dokumen_dievaluasi", 0)} dokumen '
+        f'({cls_r.get("dokumen_tidak_tercocok", 0)} tidak ter-match). '
+        f'Metode: Confusion Matrix One-vs-Rest per kelas (KTP/KK/SIM/UNKNOWN).</p>'
+        f'<p class="sub"><b>Overall Accuracy</b> (prediksi benar / total dok): '
+        f'<span style="color:#2e7d32;font-size:18px;font-weight:bold">{overall_acc:.3f}</span>'
+        f'&nbsp;&nbsp;({total_benar}/{total_gt} dokumen)</p>'
+        '<table><thead><tr>'
+        '<th>Kelas</th><th>Precision</th><th>Recall</th>'
+        '<th>F1-Score</th><th>Accuracy (OvR)</th>'
+        '<th>TP</th><th>TN</th><th>FP</th><th>FN</th>'
+        '</tr></thead>'
+        f'<tbody>{"".join(rows)}</tbody></table></div>'
+    )
+
+
+>>>>>>> b9321b2 (update perhitungan metrix)
 def _html_waktu_section(time_r: dict) -> str:
     """Bangun seksi efisiensi waktu untuk laporan HTML."""
     if not time_r:
@@ -364,6 +458,14 @@ def export_html_report(
     rate_clr      = "#2e7d32" if rate >= 90 else "#f57f17" if rate >= 70 else "#c62828"
     rows_html     = _html_rows(records)
     dist_html     = _html_dist(dist, total)
+<<<<<<< HEAD
+=======
+    # Tahap 1: Evaluasi klasifikasi dokumen (ada Accuracy — masalah klasifikasi)
+    classification_section = _html_classification_section(
+        metrics.get("classification_evaluation", {})
+    )
+    # Tahap 2: Evaluasi ekstraksi field OCR (tanpa Accuracy — Information Extraction)
+>>>>>>> b9321b2 (update perhitungan metrix)
     f1_section     = _html_f1_section(metrics.get("f1_evaluation", {}))
     nokk_section   = _html_nokk_analysis_section(metrics.get("f1_evaluation", {}))
     waktu_section  = _html_waktu_section(metrics.get("time_efficiency", {}))
@@ -413,13 +515,14 @@ def export_html_report(
     <thead><tr>
       <th>File Asli</th><th>File Baru</th><th>Jenis</th><th>Status</th>
       <th>Nama / Kepala KK</th><th>NIK / No. KK</th><th>Field Compl.</th>
-      <th>Confidence</th><th>Waktu</th>
+      <th>Waktu</th>
     </tr></thead>
     <tbody>{rows_html}</tbody>
   </table>
   </div>
 </div>
 
+{classification_section}
 {f1_section}
 {nokk_section}
 {waktu_section}
@@ -833,14 +936,20 @@ def export_naming_report(
 
 
 # =============================================================================
-# MODULE 9C — EVALUASI PRECISION / RECALL / F1-SCORE
+# MODULE 9C-B — EVALUASI EKSTRAKSI FIELD OCR (TAHAP 2)
 #
-# Membandingkan hasil ekstraksi OCR dengan ground truth untuk mengukur
-# akurasi per field secara kuantitatif.
+# Membandingkan hasil ekstraksi teks OCR dengan ground truth untuk mengukur
+# ketepatan per field secara kuantitatif.
+#
+# PENTING: Tahap ini adalah Information Extraction, BUKAN klasifikasi.
+# Karena itu:
+#   - Accuracy TIDAK dihitung (tidak ada TN yang bermakna)
+#   - Field 'jenis_dokumen' TIDAK dievaluasi di sini (ada di MODULE 9C-A)
+#   - Hanya Precision, Recall, F1-Score yang dilaporkan
 #
 # Ground truth: file CSV dengan kolom:
 #   nama_file, nama, nik, tempat_lahir, tanggal_lahir, jenis_kelamin,
-#   jenis_dokumen
+#   jenis_dokumen, nomor_kk, nama_kepala, dll.
 #   Nilai kosong ("") = field tidak dievaluasi untuk dokumen tersebut.
 #
 # Definisi TP/FP/FN untuk ekstraksi teks:
@@ -855,6 +964,7 @@ def export_naming_report(
 #   F1-Score  = 2 * (P * R) / (P + R)
 #
 # Macro average = rata-rata sederhana semua field yang dievaluasi.
+# Untuk evaluasi klasifikasi (MODULE 9C-A), lihat calculate_classification_metrics().
 # =============================================================================
 def load_ground_truth(csv_path: str) -> dict:
     """
@@ -940,9 +1050,15 @@ def _normalize_for_compare(val: str) -> str:
     return v
 
 
-def calculate_f1_score(records: list, ground_truth: dict) -> dict:
+def calculate_ocr_f1(records: list, ground_truth: dict) -> dict:
     """
-    Menghitung Precision, Recall, F1-Score per field dan macro average.
+    Menghitung Precision, Recall, F1-Score per field OCR dan macro average.
+
+    Fungsi ini untuk TAHAP 2 (Ekstraksi Field OCR). Sesuai metodologi
+    Information Extraction:
+      - TIDAK menghitung Accuracy (tidak ada TN yang bermakna)
+      - TIDAK mengevaluasi field 'jenis_dokumen' (ada di calculate_classification_metrics)
+      - Hanya TP, FP, FN yang dihitung per field
 
     Algoritma:
       1. Buat index records berdasarkan nama_file_asli
@@ -951,6 +1067,7 @@ def calculate_f1_score(records: list, ground_truth: dict) -> dict:
          b. Untuk setiap field (non-kosong di GT):
             - Bandingkan nilai ekstraksi vs GT (setelah normalisasi)
             - Increment TP / FP / FN sesuai hasil
+         c. Field kosong di GT di-SKIP (tidak dievaluasi, tidak ada TN)
       3. Hitung P, R, F1 per field
       4. Hitung macro average
 
@@ -960,21 +1077,24 @@ def calculate_f1_score(records: list, ground_truth: dict) -> dict:
 
     Returns:
         dict:
-            per_field          : {field: {tp, fp, fn, precision, recall, f1_score}}
-            macro_precision    : float
-            macro_recall       : float
-            macro_f1_score     : float
-            dokumen_dievaluasi : int
+            per_field             : {field: {tp, fp, fn, precision, recall, f1_score}}
+            macro_precision       : float
+            macro_recall          : float
+            macro_f1_score        : float
+            dokumen_dievaluasi    : int
             dokumen_tidak_tercocok: int
-            total_ground_truth : int
+            total_ground_truth    : int
     """
+    # Field 'jenis_dokumen' dihapus dari sini karena sudah dievaluasi
+    # di calculate_classification_metrics() (Tahap 1 — Klasifikasi)
     eval_fields = [
         "nama", "nik", "tempat_lahir", "tanggal_lahir",
-        "jenis_kelamin", "jenis_dokumen", "alamat",
+        "jenis_kelamin", "alamat",
         "nomor_kk", "nama_kepala", "desa_kelurahan",
         "kecamatan", "kabupaten_kota", "provinsi", "rtrw",
         "no_sim",
     ]
+    # Hanya TP/FP/FN — tidak ada TN karena ini Information Extraction
     counters = {f: {"tp": 0, "fp": 0, "fn": 0} for f in eval_fields}
 
     # Index records untuk pencarian O(1).
@@ -983,7 +1103,7 @@ def calculate_f1_score(records: list, ground_truth: dict) -> dict:
     #   - nama_file_baru  : nama file setelah rename / preview dry-run
     rec_index_asli = {r.get("nama_file_asli", ""): r for r in records}
     rec_index_baru = {r.get("nama_file_baru", ""): r for r in records}
-    matched_docs = 0
+    matched_docs   = 0
     unmatched_docs = 0
 
     for fname, gt_fields in ground_truth.items():
@@ -991,10 +1111,8 @@ def calculate_f1_score(records: list, ground_truth: dict) -> dict:
 
         if rec is None:
             # Dokumen ada di ground truth tapi tidak ter-match ke record manapun.
-            # Ini terjadi ketika: (1) OCR salah baca nama sehingga nama_file_baru
-            # berbeda, atau (2) dokumen diklasifikasi UNKNOWN dan masuk ERROR/.
-            # Secara metodologis, semua field non-kosong di GT dihitung sebagai FN
-            # karena sistem gagal mengidentifikasi / mengekstrak dokumen tersebut.
+            # Terjadi ketika OCR salah baca nama atau dokumen UNKNOWN masuk ERROR/.
+            # Semua field non-kosong di GT dihitung sebagai FN (sistem gagal total).
             unmatched_docs += 1
             for field in eval_fields:
                 gt_val = _normalize_for_compare(gt_fields.get(field, ""))
@@ -1009,17 +1127,20 @@ def calculate_f1_score(records: list, ground_truth: dict) -> dict:
             ocr_val = _normalize_for_compare(rec.get(field, ""))
 
             if not gt_val:
-                continue  # field kosong di GT = tidak dievaluasi
+                # Field kosong di GT = tidak dievaluasi (tidak ada TN di sini)
+                continue
 
+            # Field ada di ground truth — evaluasi apakah OCR benar atau tidak
             if ocr_val and ocr_val == gt_val:
-                counters[field]["tp"] += 1      # benar
+                counters[field]["tp"] += 1      # diekstrak dan benar
             elif ocr_val and ocr_val != gt_val:
-                counters[field]["fp"] += 1      # salah isi
+                counters[field]["fp"] += 1      # diekstrak tapi salah tebakan
+                counters[field]["fn"] += 1      # gagal mengekstrak nilai yang benar
             else:
-                counters[field]["fn"] += 1      # tidak terekstrak
+                counters[field]["fn"] += 1      # tidak terekstrak padahal ada di GT
 
-    # Hitung metrik per field
-    results         = {}
+    # Hitung metrik per field (tanpa Accuracy karena tidak ada TN)
+    results              = {}
     all_p, all_r, all_f1 = [], [], []
 
     for field, c in counters.items():
@@ -1039,8 +1160,10 @@ def calculate_f1_score(records: list, ground_truth: dict) -> dict:
             "precision" : round(precision, 3),
             "recall"    : round(recall, 3),
             "f1_score"  : round(f1, 3),
+            # Catatan: tidak ada 'accuracy' di sini (Information Extraction)
         }
 
+        # Hanya masukkan ke macro jika ada setidaknya satu observasi
         if (tp + fp + fn) > 0:
             all_p.append(precision)
             all_r.append(recall)
@@ -1061,46 +1184,58 @@ def calculate_f1_score(records: list, ground_truth: dict) -> dict:
     }
 
 
+# Alias backward-compatible: kode lama yang masih memanggil calculate_f1_score
+# tetap berfungsi. Gunakan calculate_ocr_f1() untuk kode baru.
+calculate_f1_score = calculate_ocr_f1
+
+
 def print_f1_report(f1_result: dict, logger: logging.Logger) -> None:
     """
-    Mencetak tabel Precision / Recall / F1-Score ke terminal.
+    Mencetak tabel evaluasi Ekstraksi Field OCR (Tahap 2) ke terminal.
 
-    Format tabel (cocok untuk disalin ke laporan penelitian):
+    Menampilkan Precision, Recall, F1-Score per field.
+    Accuracy TIDAK ditampilkan di sini (Information Extraction, bukan klasifikasi).
+    Untuk tabel evaluasi klasifikasi, lihat print_classification_report().
+
+    Format tabel:
       +------------------+------+------+------+----+----+----+
       | Field            |  P   |  R   |  F1  | TP | FP | FN |
       +------------------+------+------+------+----+----+----+
       | Nama             | 0.92 | 0.88 | 0.90 | 22 |  2 |  3 |
       | NIK              | 0.84 | 0.80 | 0.82 | 20 |  4 |  5 |
-      | ...              | ...  | ...  | ...  | .. | .. | .. |
       +------------------+------+------+------+----+----+----+
-      | MACRO AVERAGE    | 0.88 | 0.85 | 0.87 |    |    |    |
+      | MACRO AVERAGE    | 0.88 | 0.85 | 0.87 |  - |  - |  - |
       +------------------+------+------+------+----+----+----+
 
     Args:
-        f1_result (dict)         : Output dari calculate_f1_score().
+        f1_result (dict)          : Output dari calculate_ocr_f1().
         logger    (logging.Logger): Logger instance.
     """
     if not f1_result:
         return
 
     per_field = f1_result.get("per_field", {})
+    # Lebar tabel: Field(16) + P/R/F1(6 each) + TP/FP/FN(4 each)
     sep = "+------------------+------+------+------+----+----+----+"
 
     logger.info("")
     logger.info(sep)
     logger.info(
-        f"| {'EVALUASI PRECISION / RECALL / F1-SCORE':<52}|"
+        f"| {'EVALUASI EKSTRAKSI FIELD OCR — TAHAP 2':<52}|"
+    )
+    logger.info(
+        f"|  Metrik: Precision / Recall / F1-Score (Information Extraction)"
+        f"{' ':<5}|"
     )
     logger.info(
         f"|  Dokumen dievaluasi: "
         f"{f1_result['dokumen_dievaluasi']}/{f1_result['total_ground_truth']}"
-        f" ground truth{' ':<28}|"
+        f" ground truth{' ':<18}|"
     )
     unmatched = f1_result.get('dokumen_tidak_tercocok', 0)
     if unmatched > 0:
         logger.info(
-            f"|  Tidak ter-match (dihitung sbg FN): {unmatched} dok"
-            f"{' ':<16}|"
+            f"|  Tidak ter-match (dihitung sbg FN): {unmatched} dok{' ':<11}|"
         )
     logger.info(sep)
     logger.info(
@@ -1110,13 +1245,14 @@ def print_f1_report(f1_result: dict, logger: logging.Logger) -> None:
     )
     logger.info(sep)
 
+    # Catatan: 'jenis_dokumen' dihapus dari labels karena dievaluasi
+    # di print_classification_report() (Tahap 1 — Klasifikasi Dokumen)
     field_labels = {
         "nama"          : "Nama",
         "nik"           : "NIK",
         "tempat_lahir"  : "Tempat Lahir",
         "tanggal_lahir" : "Tanggal Lahir",
         "jenis_kelamin" : "Jenis Kelamin",
-        "jenis_dokumen" : "Jenis Dokumen",
         "alamat"        : "Alamat",
         "nomor_kk"      : "Nomor KK",
         "nama_kepala"   : "Nama Kepala",
@@ -1129,6 +1265,7 @@ def print_f1_report(f1_result: dict, logger: logging.Logger) -> None:
     }
     for field, label in field_labels.items():
         m = per_field.get(field, {})
+        # Skip field yang tidak punya observasi sama sekali
         if not m or (m["tp"] + m["fp"] + m["fn"]) == 0:
             continue
         logger.info(
@@ -1186,35 +1323,40 @@ def print_f1_report(f1_result: dict, logger: logging.Logger) -> None:
 
 def export_f1_report(f1_result: dict, output_root: str, timestamp: str) -> None:
     """
-    Menyimpan hasil evaluasi F1-Score ke JSON dan CSV.
+    Menyimpan hasil evaluasi Ekstraksi Field OCR (Tahap 2) ke JSON dan CSV.
 
     Output:
       metadata/f1_score_<ts>.json  — hasil lengkap per field
-      metadata/f1_score_<ts>.csv   — tabel flat untuk laporan penelitian
+      metadata/f1_score_<ts>.csv   — tabel flat (field, precision, recall, f1_score, tp, fp, fn)
+
+    Catatan: Kolom 'accuracy' dan 'tn' TIDAK ada di output ini karena
+    tahap ekstraksi OCR adalah Information Extraction, bukan klasifikasi.
+    Untuk laporan evaluasi klasifikasi, lihat export_classification_report().
 
     Args:
-        f1_result   (dict): Output dari calculate_f1_score().
+        f1_result   (dict): Output dari calculate_ocr_f1().
         output_root (str) : Folder root.
         timestamp   (str) : Timestamp untuk nama file.
     """
     meta_dir = os.path.join(output_root, "metadata")
     os.makedirs(meta_dir, exist_ok=True)
 
-    # JSON
+    # JSON — hasil lengkap per field (tanpa accuracy/tn)
     json_path = os.path.join(meta_dir, f"f1_score_{timestamp}.json")
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(f1_result, f, ensure_ascii=False, indent=2)
     log.info(f"F1 JSON: {json_path}")
 
-    # CSV per field (tabel siap pakai untuk laporan)
+    # CSV per field — tabel siap pakai untuk laporan penelitian
     csv_path = os.path.join(meta_dir, f"f1_score_{timestamp}.csv")
+    # Catatan: 'jenis_dokumen' dihapus dari labels karena sudah ada di
+    # classification_eval CSV (Tahap 1). Tidak duplikasi.
     field_labels = {
         "nama"          : "Nama",
         "nik"           : "NIK",
         "tempat_lahir"  : "Tempat Lahir",
         "tanggal_lahir" : "Tanggal Lahir",
         "jenis_kelamin" : "Jenis Kelamin",
-        "jenis_dokumen" : "Jenis Dokumen",
         "alamat"        : "Alamat",
         "nomor_kk"      : "Nomor KK",
         "nama_kepala"   : "Nama Kepala",
@@ -1228,6 +1370,7 @@ def export_f1_report(f1_result: dict, output_root: str, timestamp: str) -> None:
     rows = []
     for field, label in field_labels.items():
         m = f1_result.get("per_field", {}).get(field, {})
+        # Hanya masukkan field yang punya setidaknya satu observasi
         if m and (m["tp"] + m["fp"] + m["fn"]) > 0:
             rows.append({
                 "field"     : label,
@@ -1247,12 +1390,305 @@ def export_f1_report(f1_result: dict, output_root: str, timestamp: str) -> None:
     })
 
     with open(csv_path, "w", newline="", encoding="utf-8-sig") as f:
+        # Kolom hanya precision/recall/f1/tp/fp/fn (tanpa accuracy dan tn)
         writer = csv.DictWriter(
-            f, fieldnames=["field","precision","recall","f1_score","tp","fp","fn"]
+            f, fieldnames=["field", "precision", "recall", "f1_score", "tp", "fp", "fn"]
         )
         writer.writeheader()
         writer.writerows(rows)
     log.info(f"F1 CSV : {csv_path}")
+
+
+# =============================================================================
+# MODULE 9C-A — EVALUASI KLASIFIKASI DOKUMEN (TAHAP 1)
+#
+# Mengevaluasi apakah sistem berhasil mengidentifikasi jenis dokumen dengan benar.
+# Kelas yang dievaluasi: KTP, KK, SIM, UNKNOWN.
+#
+# Ini adalah masalah KLASIFIKASI, sehingga Accuracy bermakna dan dihitung.
+# Pendekatan: Confusion Matrix One-vs-Rest (OvR) per kelas.
+#
+# Untuk setiap kelas C (misal "ktp" vs sisanya):
+#   TP  = GT=C DAN prediksi=C    (benar diklasifikasi sebagai C)
+#   FP  = GT≠C DAN prediksi=C   (salah dikira C)
+#   FN  = GT=C DAN prediksi≠C   (gagal mengenali C)
+#   TN  = GT≠C DAN prediksi≠C  (benar bukan C)
+#
+#   Precision = TP / (TP + FP)
+#   Recall    = TP / (TP + FN)
+#   F1-Score  = 2 * (P * R) / (P + R)
+#   Accuracy  = (TP + TN) / (TP + TN + FP + FN)  ← HANYA di sini
+#
+# Overall Accuracy = total prediksi benar / total dokumen dievaluasi
+# =============================================================================
+def calculate_classification_metrics(records: list, ground_truth: dict) -> dict:
+    """
+    Menghitung metrik evaluasi klasifikasi dokumen (Tahap 1).
+
+    Menggunakan confusion matrix one-vs-rest per kelas untuk menghitung
+    Precision, Recall, F1-Score, dan Accuracy per kelas (KTP/KK/SIM/UNKNOWN).
+
+    Accuracy bermakna di sini karena klasifikasi adalah pertanyaan binary
+    per kelas: "apakah dokumen ini termasuk kelas C atau bukan?"
+
+    Args:
+        records      (list) : Output dari process_folder() (list of dict).
+        ground_truth (dict) : Output dari load_ground_truth().
+                              Kolom 'jenis_dokumen' digunakan sebagai label GT.
+
+    Returns:
+        dict:
+            per_class              : {kelas: {tp, tn, fp, fn, precision, recall, f1_score, accuracy}}
+            overall_accuracy       : float — total prediksi benar / total dokumen
+            macro_precision        : float
+            macro_recall           : float
+            macro_f1_score         : float
+            macro_accuracy         : float — rata-rata accuracy per kelas (OvR)
+            dokumen_dievaluasi     : int
+            dokumen_tidak_tercocok : int
+            total_ground_truth     : int
+            total_benar            : int
+    """
+    classes = ["ktp", "kk", "sim", "unknown"]
+
+    # Index records untuk pencarian O(1)
+    rec_index_asli = {r.get("nama_file_asli", ""): r for r in records}
+    rec_index_baru = {r.get("nama_file_baru", ""): r for r in records}
+
+    matched   = 0
+    unmatched = 0
+    pairs     = []   # list of (gt_label, pred_label) untuk setiap dokumen
+
+    for fname, gt_fields in ground_truth.items():
+        # Ambil label jenis dokumen dari kolom ground truth
+        gt_label = gt_fields.get("jenis_dokumen", "").strip().lower()
+        if not gt_label:
+            continue  # Lewati jika kolom jenis_dokumen kosong di GT
+
+        rec = rec_index_asli.get(fname) or rec_index_baru.get(fname)
+        if rec is None:
+            # Dokumen tidak ter-match — sistem gagal total, anggap prediksi = unknown
+            unmatched += 1
+            pairs.append((gt_label, "unknown"))
+        else:
+            matched += 1
+            pred_label = rec.get("jenis_dokumen", "unknown").lower().strip()
+            pairs.append((gt_label, pred_label))
+
+    total_evaluated = len(pairs)
+    total_benar     = sum(1 for gt, pred in pairs if gt == pred)
+    overall_acc     = round(total_benar / total_evaluated, 3) if total_evaluated > 0 else 0.0
+
+    # Hitung metrik per kelas dengan pendekatan one-vs-rest
+    per_class = {}
+    all_p, all_r, all_f1, all_acc = [], [], [], []
+
+    for cls in classes:
+        # Confusion matrix: kelas cls vs semua kelas lainnya
+        tp = sum(1 for gt, pred in pairs if gt == cls and pred == cls)
+        fp = sum(1 for gt, pred in pairs if gt != cls and pred == cls)
+        fn = sum(1 for gt, pred in pairs if gt == cls and pred != cls)
+        tn = sum(1 for gt, pred in pairs if gt != cls and pred != cls)
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall    = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1        = (
+            2 * precision * recall / (precision + recall)
+            if (precision + recall) > 0 else 0.0
+        )
+        # Accuracy per kelas bermakna: "seberapa sering sistem benar
+        # dalam membedakan kelas ini dengan kelas lainnya?"
+        total_obs = tp + tn + fp + fn
+        accuracy  = (tp + tn) / total_obs if total_obs > 0 else 0.0
+
+        per_class[cls] = {
+            "tp"        : tp,
+            "tn"        : tn,
+            "fp"        : fp,
+            "fn"        : fn,
+            "precision" : round(precision, 3),
+            "recall"    : round(recall, 3),
+            "f1_score"  : round(f1, 3),
+            "accuracy"  : round(accuracy, 3),
+        }
+
+        if total_obs > 0:
+            all_p.append(precision)
+            all_r.append(recall)
+            all_f1.append(f1)
+            all_acc.append(accuracy)
+
+    macro_p   = round(sum(all_p)   / len(all_p),   3) if all_p   else 0.0
+    macro_r   = round(sum(all_r)   / len(all_r),   3) if all_r   else 0.0
+    macro_f1  = round(sum(all_f1)  / len(all_f1),  3) if all_f1  else 0.0
+    macro_acc = round(sum(all_acc) / len(all_acc),  3) if all_acc else 0.0
+
+    return {
+        "per_class"               : per_class,
+        "overall_accuracy"        : overall_acc,
+        "macro_precision"         : macro_p,
+        "macro_recall"            : macro_r,
+        "macro_f1_score"          : macro_f1,
+        "macro_accuracy"          : macro_acc,
+        "dokumen_dievaluasi"      : matched,
+        "dokumen_tidak_tercocok"  : unmatched,
+        "total_ground_truth"      : total_evaluated,
+        "total_benar"             : total_benar,
+    }
+
+
+def print_classification_report(cls_result: dict, logger: logging.Logger) -> None:
+    """
+    Mencetak tabel evaluasi klasifikasi dokumen (Tahap 1) ke terminal.
+
+    Menampilkan Precision, Recall, F1-Score, dan Accuracy per kelas.
+    Accuracy bermakna di sini karena ini adalah masalah klasifikasi.
+
+    Format tabel:
+      +-------------+------+------+------+------+----+----+----+----+
+      | EVALUASI KLASIFIKASI DOKUMEN — TAHAP 1                       |
+      | ...                                                           |
+      +-------------+------+------+------+------+----+----+----+----+
+      | Kelas       |  P   |  R   |  F1  | ACC  | TP | TN | FP | FN |
+      +-------------+------+------+------+------+----+----+----+----+
+      | KTP         | 0.92 | 0.88 | 0.90 | 0.96 | 22 | 25 |  2 |  3 |
+      +-------------+------+------+------+------+----+----+----+----+
+      | MACRO AVG   | 0.88 | 0.85 | 0.87 | 0.94 |  - |  - |  - |  - |
+      +-------------+------+------+------+------+----+----+----+----+
+
+    Args:
+        cls_result (dict)          : Output dari calculate_classification_metrics().
+        logger     (logging.Logger): Logger instance.
+    """
+    if not cls_result:
+        return
+
+    per_class = cls_result.get("per_class", {})
+    sep = "+-------------+------+------+------+------+----+----+----+----+"
+    W   = len(sep)  # 63 karakter
+
+    logger.info("")
+    logger.info(sep)
+    logger.info(f"| {'EVALUASI KLASIFIKASI DOKUMEN — TAHAP 1':<{W - 4}}  |")
+    logger.info(
+        f"|  Dievaluasi : {cls_result['dokumen_dievaluasi']}/{cls_result['total_ground_truth']} dok"
+        f"  —  Prediksi benar: {cls_result['total_benar']}"
+        f"  —  Overall Accuracy: {cls_result['overall_accuracy']:.3f}  |"
+    )
+    logger.info(sep)
+    logger.info(
+        "| {:<11} | {:^4} | {:^4} | {:^4} | {:^4} | {:^2} | {:^2} | {:^2} | {:^2} |".format(
+            "Kelas", "P", "R", "F1", "ACC", "TP", "TN", "FP", "FN"
+        )
+    )
+    logger.info(sep)
+
+    for cls in ["ktp", "kk", "sim", "unknown"]:
+        m = per_class.get(cls, {})
+        if not m:
+            continue
+        logger.info(
+            "| {:<11} | {:>4.2f} | {:>4.2f} | {:>4.2f} | {:>4.2f} | {:>2} | {:>2} | {:>2} | {:>2} |".format(
+                cls.upper(),
+                m["precision"], m["recall"], m["f1_score"], m["accuracy"],
+                m["tp"], m["tn"], m["fp"], m["fn"],
+            )
+        )
+
+    logger.info(sep)
+    logger.info(
+        "| {:<11} | {:>4.2f} | {:>4.2f} | {:>4.2f} | {:>4.2f} | {:^2} | {:^2} | {:^2} | {:^2} |".format(
+            "MACRO AVG",
+            cls_result["macro_precision"],
+            cls_result["macro_recall"],
+            cls_result["macro_f1_score"],
+            cls_result["macro_accuracy"],
+            "-", "-", "-", "-",
+        )
+    )
+    logger.info(sep)
+    logger.info(
+        f"|  Overall Accuracy = {cls_result['total_benar']}/{cls_result['total_ground_truth']}"
+        f" = {cls_result['overall_accuracy']:.3f}"
+        f"  (total prediksi benar / total dokumen)  |"
+    )
+    logger.info(sep)
+    logger.info("")
+
+
+def export_classification_report(
+    cls_result  : dict,
+    output_root : str,
+    timestamp   : str,
+) -> None:
+    """
+    Menyimpan hasil evaluasi klasifikasi dokumen (Tahap 1) ke JSON dan CSV.
+
+    Output:
+      metadata/classification_eval_<ts>.json — hasil lengkap per kelas
+      metadata/classification_eval_<ts>.csv  — tabel flat untuk laporan penelitian
+
+    CSV mengandung kolom: kelas, precision, recall, f1_score, accuracy, tp, tn, fp, fn
+    (Accuracy ADA di sini karena ini evaluasi klasifikasi)
+
+    Args:
+        cls_result  (dict): Output dari calculate_classification_metrics().
+        output_root (str) : Folder root.
+        timestamp   (str) : Timestamp untuk nama file.
+    """
+    meta_dir = os.path.join(output_root, "metadata")
+    os.makedirs(meta_dir, exist_ok=True)
+
+    # JSON — hasil lengkap per kelas
+    json_path = os.path.join(meta_dir, f"classification_eval_{timestamp}.json")
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(cls_result, f, ensure_ascii=False, indent=2)
+    log.info(f"Classification JSON: {json_path}")
+
+    # CSV — tabel per kelas siap pakai untuk laporan
+    csv_path = os.path.join(meta_dir, f"classification_eval_{timestamp}.csv")
+    rows = []
+    for cls in ["ktp", "kk", "sim", "unknown"]:
+        m = cls_result.get("per_class", {}).get(cls, {})
+        if m:
+            rows.append({
+                "kelas"     : cls.upper(),
+                "precision" : m["precision"],
+                "recall"    : m["recall"],
+                "f1_score"  : m["f1_score"],
+                "accuracy"  : m["accuracy"],   # Accuracy ADA di sini
+                "tp"        : m["tp"],
+                "tn"        : m["tn"],
+                "fp"        : m["fp"],
+                "fn"        : m["fn"],
+            })
+    # Baris macro average
+    rows.append({
+        "kelas"     : "MACRO AVERAGE",
+        "precision" : cls_result["macro_precision"],
+        "recall"    : cls_result["macro_recall"],
+        "f1_score"  : cls_result["macro_f1_score"],
+        "accuracy"  : cls_result["macro_accuracy"],
+        "tp": "", "tn": "", "fp": "", "fn": "",
+    })
+    # Baris overall accuracy (total prediksi benar / total dokumen)
+    rows.append({
+        "kelas"     : "OVERALL ACCURACY",
+        "precision" : "", "recall": "", "f1_score": "",
+        "accuracy"  : cls_result["overall_accuracy"],
+        "tp": cls_result["total_benar"],
+        "tn": "", "fp": "",
+        "fn": cls_result["total_ground_truth"],
+    })
+
+    with open(csv_path, "w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.DictWriter(
+            f, fieldnames=["kelas", "precision", "recall", "f1_score",
+                           "accuracy", "tp", "tn", "fp", "fn"]
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+    log.info(f"Classification CSV: {csv_path}")
 
 
 # =============================================================================

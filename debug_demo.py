@@ -8,7 +8,7 @@ Cara pakai:
   python main.py --debug "Dokumen/subfolder/KTP.jpeg"
   python main.py --demo
 
-Perbaikan v5.8.2:
+Perbaikan v6.0:
   - debug_single_file() sekarang menggunakan extract_text() dari preprocessing.py
     (bukan memanggil preprocess_image + OCR manual). Ini memastikan semua logika
     shadow fallback di extract_text() juga aktif saat debugging.
@@ -28,7 +28,7 @@ def debug_single_file(image_path: str, lang: str = "ind") -> None:
     """
     Tampilkan semua output OCR + hasil analisis lengkap untuk satu file.
 
-    Perbaikan v5.8.2: menggunakan extract_text() untuk mendapatkan hasil OCR
+    Perbaikan v6.0: menggunakan extract_text() untuk mendapatkan hasil OCR
     terbaik (termasuk shadow fallback), lalu juga menampilkan detail per-variant
     dari preprocess_image() untuk keperluan diagnostik.
 

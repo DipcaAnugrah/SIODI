@@ -1,6 +1,6 @@
 # ============================================================
 #  requirements_gui.txt — Dependensi SiODI GUI Desktop
-#  Sistem OCR Dokumen Identitas — v5.7
+#  Sistem OCR Dokumen Identitas — v6
 # ============================================================
 #
 #  Cara instal semua dependensi:

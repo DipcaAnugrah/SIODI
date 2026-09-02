@@ -7,7 +7,7 @@ Tidak mengimpor modul sistem lainnya — diimpor oleh semua modul lain.
 import re, os, json, logging
 from datetime import datetime
 
-VERSION = "5.7"
+VERSION = "6.0"
 
 # ── Ekstensi & folder ──────────────────────────────────────────────────────────
 SUPPORTED_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"}

@@ -430,5 +430,5 @@ python app.py
 
 ---
 
-*SiODI v5.7 — Sistem Otomatisasi Penamaan dan Pengarsipan Dokumen Identitas Digital*
+*SiODI v6 — Sistem Otomatisasi Penamaan dan Pengarsipan Dokumen Identitas Digital*
 *Dikembangkan dengan Python · CustomTkinter · Tesseract OCR · OpenCV*

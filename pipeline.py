@@ -37,7 +37,11 @@ from evaluator import (
     evaluate_results, print_evaluation,
     evaluate_naming_convention, export_naming_report,
     evaluate_time_efficiency, print_time_report,
-    load_ground_truth, calculate_f1_score, print_f1_report, export_f1_report,
+    load_ground_truth,
+    # Tahap 1: Evaluasi Klasifikasi Dokumen (dengan Accuracy, Confusion Matrix)
+    calculate_classification_metrics, print_classification_report, export_classification_report,
+    # Tahap 2: Evaluasi Ekstraksi Field OCR (Precision/Recall/F1 saja, tanpa Accuracy)
+    calculate_ocr_f1, print_f1_report, export_f1_report,
     export_html_report, _save_metrics,
 )
 
@@ -136,6 +140,7 @@ def process_folder(
             rel_dir=rel_dir, file_template=file_template,
             folder_template=folder_template, sep=sep,
             dry_run=dry_run, use_deskew=use_deskew,
+            stop_event=stop_event
         )
 
         with _lock:
@@ -193,13 +198,48 @@ def process_folder(
 
     if ground_truth_path:
         try:
-            gt        = load_ground_truth(ground_truth_path)
-            f1_result = calculate_f1_score(records, gt)
+            gt = load_ground_truth(ground_truth_path)
+
+            # Hitung jumlah kelas unik pada kolom jenis_dokumen di ground truth
+            unique_classes = {
+                v.get("jenis_dokumen", "").strip().lower()
+                for v in gt.values()
+                if v.get("jenis_dokumen", "").strip()
+            }
+            n_classes = len(unique_classes)
+            log.info(f"  Kelas dokumen di ground truth: {sorted(unique_classes)} ({n_classes} kelas)")
+
+            if n_classes >= 2:
+                # ── Tahap 1: Evaluasi Klasifikasi Dokumen ──────────────────────
+                # Minimal 2 kelas tersedia → evaluasi multi-class dengan confusion matrix
+                # Menghitung Accuracy, Precision, Recall, F1 karena ini masalah klasifikasi
+                log.info("  [GT] Menjalankan evaluasi klasifikasi multi-class (Tahap 1)...")
+                cls_result = calculate_classification_metrics(records, gt)
+                print_classification_report(cls_result, log)
+                export_classification_report(cls_result, root_input, timestamp)
+                metrics["classification_evaluation"] = cls_result
+            else:
+                # Hanya 1 kelas (atau tidak ada label jenis_dokumen) → skip klasifikasi
+                log.info(
+                    "  [GT] Dataset Ground Truth hanya berisi satu jenis dokumen, "
+                    "sehingga evaluasi klasifikasi multi-class tidak dilakukan."
+                )
+
+            # ── Tahap 2: Evaluasi Ekstraksi Field OCR ──────────────────────────
+            # Selalu dijalankan jika GT tersedia, terlepas dari jumlah kelas unik.
+            # Information Extraction — TIDAK menggunakan Accuracy.
+            # Hanya Precision, Recall, F1-Score yang dilaporkan per field.
+            log.info("  [GT] Menjalankan evaluasi ekstraksi field OCR (Tahap 2)...")
+            f1_result = calculate_ocr_f1(records, gt)
             print_f1_report(f1_result, log)
             export_f1_report(f1_result, root_input, timestamp)
             metrics["f1_evaluation"] = f1_result
+
         except (FileNotFoundError, ValueError) as e:
             log.error(str(e))
+    else:
+        # Ground Truth tidak disediakan → skip semua evaluasi performa
+        log.info("  [GT] Ground Truth tidak tersedia, evaluasi performa tidak dilakukan.")
 
     metrics["time_efficiency"]   = time_result
     metrics["naming_compliance"] = naming_result
@@ -260,15 +300,17 @@ def _log_fields(doc_type: str, fields: dict) -> None:
     elif doc_type == "sim":
         log.info(f"  No. SIM         : {fields.get('no_sim') or '-'}")
         log.info(f"  Nama            : {fields['nama'] or '-'}")
-        log.info(f"  Tempat Lahir    : {fields['tempat_lahir'] or '-'}")
-        log.info(f"  Tanggal Lahir   : {fields['tanggal_lahir'] or '-'}")
-        log.info(f"  Jenis Kelamin   : {fields['jenis_kelamin'] or '-'}")
+        log.info(f"  Tempat Lahir    : {fields.get('tempat_lahir') or '-'}")
+        log.info(f"  Tanggal Lahir   : {fields.get('tanggal_lahir') or '-'}")
+        log.info(f"  Jenis Kelamin   : {fields.get('jenis_kelamin') or '-'}")
+        log.info(f"  Alamat          : {fields.get('alamat') or '-'}")
     else:
         log.info(f"  Nama            : {fields['nama'] or '-'}")
         log.info(f"  NIK             : {fields['nik'] or '-'}")
-        log.info(f"  Tempat Lahir    : {fields['tempat_lahir'] or '-'}")
-        log.info(f"  Tanggal Lahir   : {fields['tanggal_lahir'] or '-'}")
-        log.info(f"  Jenis Kelamin   : {fields['jenis_kelamin'] or '-'}")
+        log.info(f"  Tempat Lahir    : {fields.get('tempat_lahir') or '-'}")
+        log.info(f"  Tanggal Lahir   : {fields.get('tanggal_lahir') or '-'}")
+        log.info(f"  Jenis Kelamin   : {fields.get('jenis_kelamin') or '-'}")
+        log.info(f"  Alamat          : {fields.get('alamat') or '-'}")
     log.info(
         f"  Field completeness: "
         f"{fields['_fields_filled']}/{fields['_fields_total']} "
@@ -296,12 +338,13 @@ def _move_or_preview(record, src_path, dest_path, root_input, success, dry_run):
 def _process_single(src_path, root_input, lang, rel_dir,
                     file_template=DEFAULT_FILE_TEMPLATE,
                     folder_template=DEFAULT_FOLDER_TEMPLATE,
-                    sep=DEFAULT_SEPARATOR, dry_run=False, use_deskew=True):
+                    sep=DEFAULT_SEPARATOR, dry_run=False, use_deskew=True,
+                    stop_event=None):
     filename   = os.path.basename(src_path)
     start_time = datetime.now()
     record     = _init_record(filename, rel_dir, dry_run)
     try:
-        best_text, all_texts = extract_text(src_path, lang=lang, use_deskew=use_deskew)
+        best_text, all_texts = extract_text(src_path, lang=lang, use_deskew=use_deskew, stop_event=stop_event)
         if not best_text.strip():
             log.warning("  OCR kosong — pastikan gambar tidak buram/gelap.")
             _move_to_error(src_path, root_input, rel_dir)

@@ -19,5 +19,9 @@ Cara menjalankan:
     python main.py --debug "Dokumen/sub/KTP.jpeg"
 """
 
+<<<<<<< HEAD
 __version__ = "5.8"
+=======
+__version__ = "6.0"
+>>>>>>> b9321b2 (update perhitungan metrix)
 __author__  = "Sistem OCR NLP Rule-Based"
