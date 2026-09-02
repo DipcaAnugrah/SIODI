@@ -511,7 +511,19 @@ class BatchPage(ctk.CTkFrame):
 
     def _open_report(self):
         if self._html_report_path and os.path.exists(self._html_report_path):
-            webbrowser.open(f"file:///{self._html_report_path}")
+            try:
+                # Laporan berada di <folder-hasil>/metadata/. Folder hasilnya
+                # disajikan via HTTP lokal agar tombol Download dapat bekerja.
+                from report_server import ReportServer
+                report_root = os.path.dirname(os.path.dirname(self._html_report_path))
+                if (self.app.report_server is None
+                        or self.app.report_server.root_dir != os.path.abspath(report_root)):
+                    self.app.stop_report_server()
+                    self.app.report_server = ReportServer(report_root)
+                report_rel_path = os.path.relpath(self._html_report_path, report_root)
+                webbrowser.open(self.app.report_server.url_for(report_rel_path))
+            except OSError as exc:
+                messagebox.showerror("Laporan", f"Server laporan tidak dapat dijalankan.\n\n{exc}")
         else:
             messagebox.showinfo("Laporan", "File laporan belum tersedia.")
 
@@ -1291,10 +1303,21 @@ class App(ctk.CTk):
         self.progress_queue= queue.Queue()
         self.config_path   = os.path.join(_HERE, "gui_config.json")
         self.settings      = self._load_settings()
+        self.report_server = None
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
 
         self._build_layout()
         self._show_page("batch")
         self._poll_queues()
+
+    def stop_report_server(self):
+        if self.report_server is not None:
+            self.report_server.stop()
+            self.report_server = None
+
+    def _on_close(self):
+        self.stop_report_server()
+        self.destroy()
 
     # ── Konfigurasi persisten ─────────────────────────────────────────────────
     def _load_settings(self) -> dict:

@@ -15,14 +15,22 @@ Menangani:
   - Simpan semua metrik ke JSON (_save_metrics)
 """
 import os, re, csv, json, sys, time, logging
+from urllib.parse import quote
 from datetime import datetime
 
 from config import VERSION, NAMING_PATTERN, MANUAL_TIME_SECONDS
 
 log = logging.getLogger("otomatisasi_dokumen")
 
-def _html_rows(records: list) -> str:
-    """Bangun baris <tr> tabel dokumen untuk laporan HTML."""
+def _html_rows(records: list, output_root: str = "") -> str:
+    """
+    Bangun baris <tr> tabel dokumen untuk laporan HTML.
+
+    Args:
+        records     : Daftar record hasil pemrosesan.
+        output_root : Folder root input. Digunakan untuk membuat URL relatif
+                      tombol Buka File dan Download pada kolom Aksi.
+    """
     rows = []
     for r in records:
         st    = r.get("status", "ERROR")
@@ -55,6 +63,23 @@ def _html_rows(records: list) -> str:
             col_nik  = r.get("nik", "")
             extra    = ""
 
+        # ── Kolom Aksi: Buka File + Download via server HTTP lokal ──────────
+        rel_path  = r.get("path_tujuan", "")   # path relatif dari output_root
+        aksi_html = ""
+        if rel_path and output_root:
+            # Path dimulai dari root folder output yang disajikan ReportServer.
+            path_url = quote(rel_path.replace("\\", "/"), safe="/")
+            aksi_html = (
+                f'<div class="aksi-group">'
+                f'<a class="btn-aksi btn-open" href="/{path_url}" target="_blank" '
+                f'   title="Buka file di browser">&#128196; Buka File</a>'
+                f'<a class="btn-aksi btn-download" href="/_download?path={path_url}" '
+                f'   title="Unduh file ke perangkat">&#128229; Download</a>'
+                f'</div>'
+            )
+        elif "ERROR" in st or not rel_path:
+            aksi_html = '<span style="color:#aaa;font-size:11px">—</span>'
+
         rows.append(
             f'<tr style="background:{bg}">'
             f'<td>{r.get("nama_file_asli","")}</td>'
@@ -65,6 +90,7 @@ def _html_rows(records: list) -> str:
             f'<td>{col_nik}</td>'
             f'<td class="center">{fc}%</td>'
             f'<td class="center">{r.get("waktu_proses","")}</td>'
+            f'<td class="center">{aksi_html}</td>'
             f'</tr>'
         )
     return "\n".join(rows)
@@ -379,7 +405,7 @@ def _html_css() -> str:
     """Kembalikan string CSS inline untuk laporan HTML."""
     return """*{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#333;padding:20px}
-.wrap{max-width:1100px;margin:0 auto}
+.wrap{max-width:1200px;margin:0 auto}
 .header{background:linear-gradient(135deg,#1565c0,#0d47a1);color:#fff;
         padding:24px 30px;border-radius:12px;margin-bottom:20px}
 .header h1{font-size:20px;font-weight:700;margin-bottom:4px}
@@ -396,8 +422,8 @@ h2{font-size:15px;margin-bottom:12px}
 .sub{font-size:12px;color:#666;margin-bottom:10px}
 table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
 th{background:#1565c0;color:#fff;padding:8px 10px;text-align:left}
-td{padding:7px 10px;border-bottom:1px solid #f0f0f0}
-tr:hover td{background:rgba(21,101,192,.03)}
+td{padding:7px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+tr:hover td{background:rgba(21,101,192,.04)}
 .center{text-align:center}
 .badge{padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;font-weight:600}
 .badge.ok{background:#4caf50}.badge.err{background:#f44336}
@@ -413,7 +439,16 @@ tr:hover td{background:rgba(21,101,192,.03)}
 .dist-val{font-size:12px;color:#555}
 #searchBox{padding:7px 12px;border:1px solid #ddd;border-radius:6px;
            width:280px;font-size:12px;margin-bottom:10px}
-footer{text-align:center;color:#bbb;font-size:11px;margin-top:20px}"""
+footer{text-align:center;color:#bbb;font-size:11px;margin-top:20px}
+/* ── Kolom Aksi ───────────────────────────────────────────────── */
+.aksi-group{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.btn-aksi{display:inline-block;padding:3px 8px;border-radius:5px;font-size:11px;
+          font-weight:600;text-decoration:none;cursor:pointer;border:none;
+          white-space:nowrap;transition:opacity .15s,transform .1s}
+.btn-aksi:hover{opacity:.82;transform:scale(1.04)}
+.btn-open{background:#1565c0;color:#fff}
+.btn-download{background:#2e7d32;color:#fff}
+"""
 
 
 def export_html_report(
@@ -456,7 +491,7 @@ def export_html_report(
     tgl    = datetime.now().strftime("%d %B %Y %H:%M")
 
     rate_clr      = "#2e7d32" if rate >= 90 else "#f57f17" if rate >= 70 else "#c62828"
-    rows_html     = _html_rows(records)
+    rows_html     = _html_rows(records, output_root=output_root)
     dist_html     = _html_dist(dist, total)
 <<<<<<< HEAD
 =======
@@ -515,7 +550,7 @@ def export_html_report(
     <thead><tr>
       <th>File Asli</th><th>File Baru</th><th>Jenis</th><th>Status</th>
       <th>Nama / Kepala KK</th><th>NIK / No. KK</th><th>Field Compl.</th>
-      <th>Waktu</th>
+      <th>Waktu</th><th style="min-width:180px">Aksi</th>
     </tr></thead>
     <tbody>{rows_html}</tbody>
   </table>
@@ -531,6 +566,7 @@ def export_html_report(
 <footer>Dibuat oleh Sistem Otomatisasi Penamaan dan Pengarsipan Dokumen Identitas Digital &mdash; OCR Multi-Strategi + NLP Rule-Based v{VERSION}</footer>
 </div>
 <script>
+// ── Filter pencarian ────────────────────────────────────────────────────────
 function filterRows(){{
   var q=document.getElementById("searchBox").value.toLowerCase();
   document.querySelectorAll("#docTable tbody tr").forEach(function(r){{

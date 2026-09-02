@@ -8,7 +8,7 @@ semua dependensi sudah terinstal dengan benar.
 Cara pakai:
     python install_check.py
 
-Dihasilkan oleh: Sistem OCR Dokumen Identitas GUI v5.7
+Dihasilkan oleh: Sistem OCR Dokumen Identitas GUI v6.0
 """
 import sys, os
 

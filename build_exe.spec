@@ -79,6 +79,8 @@ HIDDEN_IMPORTS = [
     "queue",
     "logging",
     "webbrowser",
+    "http.server",
+    "mimetypes",
     "io",
     "pathlib",
     "datetime",
@@ -92,6 +94,7 @@ HIDDEN_IMPORTS = [
     "file_manager",
     "evaluator",
     "logger",
+    "report_server",
     "debug_demo",
     "diag_tilted",
 ]

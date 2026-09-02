@@ -1,0 +1,318 @@
+HASIL OCR TERBAIK — IMG_20260703_210351_1.jpg
+============================================================
+
+Kombinasi Terbaik: Adaptive x PSM 3
+Skor             : 1216
+
+————————————————————————————————————————————————————————————
+KARTU KELUARGA
+No. 3211010712248929
+
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan — : DESA MAJU A
+Alamat : JL. MERDEKA NO.3 Kecamatan : KEC. SEJAHTERA A
+RT/RW : 007/004 Kabupaten/Kota : KAB. BANDUNG
+Kode Pos : 40008 Provinsi : JAWA BARAT
+
+Jenis . , Golongan
+Nama Lengkap NIK Tempat Lahir Tanggal lagama Ponakan enis Pekerjaan Da
+
+I—— oo “—— La lola To ro Ia The La |
+| uoisantoso ”——”””—”—”)OBettorzs01e8ssoe hawuwa jawouna ——”—”—————— hiorisa “jawa ”———”Ojiraseoeruarn ————”)Ojrrsswasra ””—————/jOonctawu |
+j2 Ikmwnaya ”—”—”—”—”—”—”— Rpito1sstos91520 Pereweuan jawnuna ”———””————)Ojetotoso sam” Ojirwseoerman ——”——”MENGURUS RUMAH TANGGA
+Be “—— oU “Ku “PE Lt ——
+st oo to Ke Ae “UU. LA ————— Ah A.A
+sk mt ot “LP ———— Av vw A
+sk mnt Koh ———I ————————-—————w——A w—
+28K Ih “Ih Ih” ————— ——  —————w—
+sk he” “Kh IK ———————— www w—
+dk NI — SA Ih ———I-——J JA — AA ———————-—
+0 A53 Ah AKu —— Ao Lo UU LA  —“———h———
+
+Tanggal tatus Hubungan Dokumen Imigrasi Nama Orang Tua
+PerkawnanfPerceraian Dalam Kaluarga fevararogaraan No Baspor Mo-kitap |” Aan Po
+
+rowo “pw ...ua@ Lg oh Yg Ll... oo 5 INI 5
+(4 kewwTercaTaT Po Wermarauaraa Wi Lo” ho korotesran 0. Kvwermawan
+(2 kamntercatat oo Iso 0m ob oo ho OWwstestaa oo Oinamaruwa
+ME en ipa ng ajaaa...
+ae Ko... ma ok. ko oo Ie AAAAA.A
+sek ———— Komo ok tt oo KA AAAA.A
+Pb we om oo”. 000 Ie AT
+po two” oto to too ITA
+Dilakukan Tanggal : 19-05-2020
+LEMBAR #1. Kepala Keluarga
+
+IL RT KEPALA KELUARGA KEPALA DINAS KEPENDUDUKAN DAN
+
+III. Desa/Kelurahan PENCATATAN SIPIL
+
+. Kecamatan
+IV BUDI SANTOSO Drs. BUBU. M.SI
+Tanda Tangan/Cap Jempol NIP. 1122828282828282828
+
+Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik yang diterbifkan oleh Balai Sertifikasi Elektronik (BSrE), BSSN
+
+============================================================
+SEMUA KOMBINASI (diurutkan skor tertinggi):
+
+[adaptive x PSM 3] skor=1216
+KARTU KELUARGA
+No. 3211010712248929
+
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan — : DESA MAJU A
+Alamat : JL. MERDEKA NO.3 Kecamatan : KEC. SEJAHTERA A
+RT/RW : 007/004 Kabupaten/
+... (dipotong)
+————————————————————————————————————————
+[clahe x PSM 11] skor=1207
+Ng
+
+NS
+
+Nag
+
+at
+
+Si
+
+P3
+
+(5
+
+KARTU KELUARGA
+
+KAN
+
+Ke:
+
+NS
+
+4
+
+TN
+
+PN Ga
+
+Ng
+
+No. 3211010712248929
+
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO
+
+Desa/Kelurahan
+
+DESA MAJU A
+
+Alamat
+
+JL. MERDEKA 
+... (dipotong)
+————————————————————————————————————————
+[clahe x PSM 6] skor=1081
+Gang, ARTU KELUARGA
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan — : DESAMAJUA
+Alamat : JL. MERDEKA NO.3 Kecamatan : KEC. SEJAHTERA A
+RT/RW : 007/004 Kabupaten/Kota — : KAB. BANDU
+... (dipotong)
+————————————————————————————————————————
+[otsu x PSM 11] skor=1000
+NG
+
+NE
+
+Nana
+
+Sa ae
+
+&4
+
+.—
+
+Ayang
+
+KT
+
+KARTU KELUARGA
+
+Ke
+
+1
+
+OA
+
+”N
+
+s7
+
+Ng
+
+AN
+
+No. 3211010712248929
+
+KEPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO
+
+Desa/Kelurahan
+
+DESA MAJU A
+
+Alamat
+
+JL. ME
+... (dipotong)
+————————————————————————————————————————
+[adaptive x PSM 11] skor=958
+Ng
+
+PLN
+
+NS
+
+&
+
+3
+
+KARTU KELUARGA
+
+PL
+
+#,
+
+ASP
+
+5
+
+3
+
+Ya
+
+Id
+
+D2
+
+SI
+
+UAAN
+
+VE)
+
+No. 3211010712248929
+
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO
+
+Desa/Kelurahan
+
+DESA MAJU A
+
+Alamat
+
+JL. MERD
+... (dipotong)
+————————————————————————————————————————
+[raw_gray x PSM 11] skor=957
+Ng
+
+NS
+
+Nag
+
+2
+
+F4
+
+TA
+
+aa
+
+R7
+
+KARTU KELUARGA
+
+Ke:
+
+G
+
+HAN
+
+WN
+
+s7
+
+Ng
+
+AN
+
+No. 3211010712248929
+
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO
+
+Desa/Kelurahan
+
+DESA MAJU A
+
+Alamat
+
+JL. MERDEKA 
+... (dipotong)
+————————————————————————————————————————
+[adaptive x PSM 6] skor=941
+Bawal U KELUARGA
+In Ts 3 29
+NS No. 32110107122489
+| REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan — : DESA MAJU A
+Alamat : JL. MERDEKA NO.3 Kecamatan : KEC. SEJAHTERA A
+RT/RW : 007
+... (dipotong)
+————————————————————————————————————————
+[raw_gray x PSM 6] skor=884
+ta KART
+au U KELUARGA
+Tn No. 3211010 8929
+pa Oo. 321101071224
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan : DESA MAJU A
+Alamat : JL. MERDEKA NO.3 Kecamatan : KEC. SEJAHTERA A
+RT/
+... (dipotong)
+————————————————————————————————————————
+[otsu x PSM 6] skor=880
+Ta KART
+Gary U KELUARGA
+Ti No. 3211010 8929
+pa Oo. 321101071224
+KEPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan : DESA MAJU A
+Alamat : JL. MERDEKA NO.3 Kecamatan : KEC. SEJAHTERA A
+R
+... (dipotong)
+————————————————————————————————————————
+[raw_gray x PSM 3] skor=828
+KARTU KELUARGA
+No. 3211010712248929
+
+UTARN
+REPUBLIK INDONE .
+me lagi Keluarga : Ta SANTOSO Desa/Kelurahan — : DESA MAJU A
+EIRW Ke Ga OANO-3 Kecamatan - KEC. SEJAHTERA A
+Kode Pos 1  Daga Kabupaten/Kota
+... (dipotong)
+————————————————————————————————————————
+[otsu x PSM 3] skor=812
+KARTU KELUARGA
+No. 3211010712248929
+
+UAN
+KEPUBLIK INDONE .
+Nama Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan — : DESA MAJU A
+RTIRW » Ab: MERDEKA NO.3 Kecamatan - KEC. SEJAHTERA A
+Kode Pos . (01004 Ka
+... (dipotong)
+————————————————————————————————————————
+[clahe x PSM 3] skor=773
+KARTU KELUARGA
+No. 3211010712248929
+
+UTARN
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan — : DESA MAJU A
+Alamat 1 JL. MERDEKA No.3 Kecamatan : KEC. SEJAHTERA A
+RT/RW : 007/004 Kabu
+... (dipotong)
+————————————————————————————————————————

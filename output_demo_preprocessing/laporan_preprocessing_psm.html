@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laporan Preprocessing x PSM — Sistem OCR Dokumen</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0f1123;color:#e2e8f0;line-height:1.6;padding:0 0 60px 0}
+.hero{background:linear-gradient(135deg,#0f1123 0%,#1a1f45 50%,#0f2944 100%);border-bottom:1px solid #2d3748;padding:56px 60px 40px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#3b82f6,#8b5cf6,#ec4899)}
+.hero h1{font-size:2rem;font-weight:700;margin-bottom:8px;background:linear-gradient(90deg,#63b3ed,#9f7aea);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:#a0aec0;font-size:1rem;max-width:700px}
+.chips{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap}
+.chip{background:#1e2240;border:1px solid #334;padding:6px 16px;border-radius:999px;font-size:13px;color:#90cdf4}
+.section{max-width:1400px;margin:40px auto 0;padding:0 40px}
+.explain-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:40px}
+.explain-card{background:#151829;border:1px solid #2d3748;border-radius:12px;padding:20px;border-top:3px solid}
+.explain-card h3{font-size:14px;font-weight:700;margin-bottom:8px}
+.explain-card p{font-size:13px;color:#a0aec0}
+.explain-card code{background:#1e2240;padding:1px 6px;border-radius:3px;font-family:monospace;font-size:12px}
+.card{background:#151829;border:1px solid #2d3748;border-radius:16px;padding:28px;margin-bottom:40px}
+.card-header{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.card-header h2{font-size:1.25rem;font-weight:700;color:#f7fafc}
+.badge{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600}
+h3{font-size:1rem;font-weight:600}
+table{width:100%;border-collapse:collapse;background:#0f1123;border-radius:8px;overflow:hidden}
+th{background:#1a1f45;color:#90cdf4;font-size:13px;font-weight:600;padding:12px 14px;text-align:left;border-bottom:1px solid #2d3748}
+td{border-bottom:1px solid #1a2035;vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover{background:#1a2035 !important}
+.footer{text-align:center;color:#4a5568;font-size:12px;margin-top:60px;padding:20px;border-top:1px solid #1a2035}
+</style>
+</head>
+<body>
+<div class="hero">
+  <h1>Laporan Preprocessing x PSM — Belakang Layar Sistem OCR</h1>
+  <p>Dokumentasi visual bagaimana sistem memproses setiap gambar dokumen (KTP/SIM/KK) menggunakan
+  4 varian preprocessing citra dikombinasikan dengan 3 mode PSM Tesseract, menghasilkan
+  <strong>12 kombinasi OCR per gambar</strong>.</p>
+  <div class="chips">
+    <div class="chip">3 Gambar Diproses</div>
+    <div class="chip">4 Preprocessing Variants</div>
+    <div class="chip">3 PSM Modes (3, 6, 11)</div>
+    <div class="chip">12 Kombinasi / Gambar</div>
+    <div class="chip">Bahasa: ind (Tesseract)</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2 style="margin-bottom:20px;color:#90cdf4">4 Varian Preprocessing</h2>
+  <div class="explain-grid">
+    <div class="explain-card" style="border-top-color:#3b82f6">
+      <h3 style="color:#63b3ed">CLAHE</h3>
+      <p><strong>Contrast Limited Adaptive Histogram Equalization</strong><br>
+      Meningkatkan kontras lokal pada setiap tile (16x16 px). Efektif untuk pencahayaan tidak merata.
+      Parameter: <code>clipLimit=2.5</code>, <code>tileGridSize=(16,16)</code>.</p>
+    </div>
+    <div class="explain-card" style="border-top-color:#f59e0b">
+      <h3 style="color:#fbbf24">Otsu Thresholding</h3>
+      <p><strong>Binarisasi Global Otsu</strong><br>
+      Memilih threshold binarisasi optimal dari histogram intensitas global.
+      Menghasilkan gambar hitam-putih. Kode: <code>THRESH_BINARY + THRESH_OTSU</code>.</p>
+    </div>
+    <div class="explain-card" style="border-top-color:#10b981">
+      <h3 style="color:#34d399">Adaptive Gaussian</h3>
+      <p><strong>Binarisasi Lokal Adaptif</strong><br>
+      Tiap area kecil punya threshold sendiri. Didahului denoising
+      (<code>fastNlMeansDenoising</code>). Efektif untuk pencahayaan tidak merata.</p>
+    </div>
+    <div class="explain-card" style="border-top-color:#8b5cf6">
+      <h3 style="color:#a78bfa">Raw Grayscale</h3>
+      <p><strong>Baseline tanpa enhancement</strong><br>
+      Konversi BGR ke grayscale langsung. Digunakan sebagai baseline perbandingan.
+      Kode: <code>cv2.COLOR_BGR2GRAY</code>.</p>
+    </div>
+  </div>
+
+  <h2 style="margin-bottom:20px;color:#90cdf4">3 Mode PSM Tesseract</h2>
+  <div class="explain-grid">
+    <div class="explain-card" style="border-top-color:#3b82f6">
+      <h3 style="color:#63b3ed">PSM 3 — Fully Automatic</h3>
+      <p>Tesseract melakukan segmentasi halaman penuh dan otomatis (OSD + layout detection).
+      Baik sebagai fallback umum dan untuk KK berbentuk tabel multi-kolom.</p>
+    </div>
+    <div class="explain-card" style="border-top-color:#f59e0b">
+      <h3 style="color:#fbbf24">PSM 6 — Uniform Text Block</h3>
+      <p>Tesseract mengasumsikan gambar adalah satu blok teks seragam.
+      Optimal untuk KTP/SIM yang memiliki field terstruktur dan rapi.</p>
+    </div>
+    <div class="explain-card" style="border-top-color:#10b981">
+      <h3 style="color:#34d399">PSM 11 — Sparse Text</h3>
+      <p>Tesseract mencari teks di mana saja tanpa asumsi layout.
+      Efektif untuk dokumen dengan teks tersebar, tidak dalam blok rapat.</p>
+    </div>
+  </div>
+
+  <h2 style="margin-bottom:24px;color:#90cdf4">Hasil per Gambar</h2>
+  
+        <div class="card">
+          <div class="card-header">
+            <h2>IMG_20260606_225027_1.jpg</h2>
+            <span class="badge">12 Kombinasi</span>
+          </div>
+          <div style="margin-bottom:16px">
+            <a href="grid_IMG_20260606_225027_1.png" target="_blank">
+              <img src="grid_IMG_20260606_225027_1.png" style="max-width:100%;border-radius:8px;border:1px solid #334">
+            </a>
+            <p style="color:#718096;font-size:12px;margin-top:4px">Klik untuk zoom. Grid 4x3: semua kombinasi preprocessing x PSM</p>
+          </div>
+          <h3 style="color:#90cdf4;margin-bottom:8px">Tabel Hasil OCR per Kombinasi (diurutkan skor tertinggi)</h3>
+          <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Preprocessing</th><th>Mode PSM</th><th>Skor</th><th>Teks OCR</th></tr></thead>
+            <tbody>
+            <tr style="background:#1e2240;border-left:4px solid #22d3ee;">
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">CLAHE</span></td>
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:12px">PSM 6 Uniform</span></td>
+              <td style="padding:8px 12px;color:#22d3ee;font-weight:bold">352<span style='color:#22d3ee;font-size:11px'> * TERBAIK</span></td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">at Ot ai ae Kan La Su . ...
+: 3 Ns TT PNG VINSI JAWA: ARA
+IK “53211010202861003..—....
+2 AO “3 2 ANN organ NAN ga EU Ba Be Ia at Lema NA
+.-Nama “ BUDI SANTOSO Me an
+Temp gl Lahir :BANDUNG, 0 021 : NO 2 sana BEN 5
+- Jenis Kelamin... #Priad 5 Gol ON ya :
+C i — Ke -. MAAN EN ON AA KAA MK en TA TOT. AAN...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">CLAHE</span></td>
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 11 Sparse</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">332</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Te
+
+nm
+
+apakan
+
+Ka
+
+Ni
+
+men arak
+
+skalian
+
+Kn
+
+Fei
+
+Dania
+
+2. 3
+
+1
+
+Buta
+
+-.
+
+'&amp;
+
+K
+
+y)
+
+Sa
+
+B
+
+Patuh
+
+Ke
+
+Ka
+
+ENB
+
+atas
+
+Pena
+
+NIK
+
+-
+
+321101
+
+86100
+
+3
+
+AN
+
+BUDI! SANT
+
+aU
+
+OP .
+
+Usa
+
+- Tempatit gl Lahir)
+
+BANDUNG 02
+
+Ui
+
+- Jenis Kelamin. :
+
+“Pri
+
+at
+
+a
+
+aki
+
+&amp;.
+
+2
+
+— Alamat
+
+Ji.Merd
+
+eka:
+
+Axa
+
+PP...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Adaptive</span></td>
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 11 Sparse</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">330</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">TA KPA “WA
+
+EL AA an — am L — ea LE ——
+
+Iwnggn memes
+
+N
+
+peda
+
+“PROVINSI JAWA: (BARAT “
+
+Ka
+
+KABUPATEN BANDUNG
+
+NIK
+
+:321101 0202561 003
+
+ana
+
+Nama
+
+:BUDI SANTOSO
+
+Tempat/Tgl Lahir, #BANDUNG, 02:02: 1986:
+
+Jenis Kelamin
+
+Pria
+
+7
+
+“Gol Darah
+
+SNN
+
+-Alamat
+
+Jl. Merdeka "
+
+aa
+
+RT/RW
+
+:001/004: -
+
+Naa T...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Adaptive</span></td>
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 3 Auto</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">305</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Untung Ham Sa mt ae ke  —— —£
+— mai PPA PANEN . -
+
+PROVINSI JAWA BARAT.
+
+Men
+
+NIK :3211010202801003 “2
+
+Nama - BUDI SANTOSO”
+ Tempat/Tgl Lahir #BANDUNG, £ 02:02: 1986: na
+- Jenis Kelamin :  :Pria ...: ba
+
+— -Alamat 0001, Merdeka " En
+—. 2 RTIRW :001/004: .
+227 KellDesa — :Buullee
+CI. Kecamatan Bandu...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#8b5cf6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Raw Gray</span></td>
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 3 Auto</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">288</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">PROVINSI JAWA BARAT
+KABUPATEN menta .
+
+NIK :8211010202861003
+Nama :BUDI SANTOSO
+Tempat/Tgl Lahir :BANDUNG, 02-02- 1986 Ser
+- Jenis Kelamin :Pria 2S Gol Darah: O
+“Alamat Jl. Merdeka PAGE MN
+RT/RW :001/004 3
+-  Kel/Desa  :Buullee T
+—— Kecamatan :Bandung
+Agama :Hindu
+- Status Perkawinan :Belum Kawin
+Pe...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#8b5cf6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Raw Gray</span></td>
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:12px">PSM 6 Uniform</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">286</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Tong SN
+. KABUPATEN BANDUNG
+NIK :3211010202861993
+Nama :BUDI SANTOSO "
+Tempat/Tgl Lahir :BANDUNG, 02-02-1986 an BE SN
+Jenis Kelamin . :Pria TN Gol Darah: O
+“Alamat sJ.Merdela 3S
+—RTIRW :001/004 Te
+-  Kel/Desa — :Buullee "Ek MN IA
+-.. Kecamatan :Bandung |
+Agama :Hindu
+- Status Perkawinan :Belum Kawin...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 6px;border-radius:4px;font-size:12px">Otsu</span></td>
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 3 Auto</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">284</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">PROVINSI JAWA BARAT
+KABUPATEN BANDUNG .
+
+NIK :8211010202861003
+Nama :BUDI SANTOSO
+Tempat/Tgi Lahir :BANDUNG, 02-02- 1986 NN
+- Jenis Kelamin :Pria Tt. Gol Darah:-0
+“Alamat :Jl. Merdeka '. | Os
+RT/RW :001/004 ..
+- Kel/Desa  :Buuliee c
+Kecamatan :Bandung
+Agama :Hindu
+- Status Perkawinan:Belum Kawin
+Pek...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 6px;border-radius:4px;font-size:12px">Otsu</span></td>
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:12px">PSM 6 Uniform</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">283</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Tn N
+— KABUPATEN BANDUNG.
+NIK :3211010202861993
+Nama :BUDI SANTOSO Ten
+Tempat/Tgl Lahir :BANDUNG, 02-02-1986 NN |
+Jenis Kelamin — :Pria Na Gol Darah: O
+-Alamat :Jl.Merdeka 3S
+— RTIRW :001/004 OS
+- Kel/Desa  :Buullee TN | MAS
+“7 Kecamatan :Bandung |
+Adama :Hindu |
+' Status Perkawinan :Belum Kawin
+Pek...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 6px;border-radius:4px;font-size:12px">Otsu</span></td>
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 11 Sparse</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">278</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">PROVINSI JAWA BARAT
+
+KABUPATEN BANDUNG
+
+NIK
+
+:321101 0202861 003.
+
+Nama
+
+:BUDI SANTOSO
+
+Tempat/Tgi Lahir :BANDUNG, 02-02- 1986
+
+Jenis Kelamin
+
+:Pria
+
+Gol Darah:-O
+
+Alamat
+
+sJl. Merdeka :
+
+RT/RW
+
+001/004
+
+—
+
+Kel/Desa
+
+Buullee
+
+Kecamatan
+
+Bandung
+
+:Hindu
+
+Agama
+
+Status Perkawinan :Belum Kawin
+
+Pekerja...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#8b5cf6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Raw Gray</span></td>
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 11 Sparse</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">277</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">PROVINSI JAWA BARAT
+
+KABUPATEN BANDUNG
+
+NIK
+
+:321101 0202861 003.
+
+Nama
+
+:BUDI SANTOSO
+
+Tempat/Tgl Lahir :BANDUNG, 02-02- 1986
+
+Jenis Kelamin
+
+:Pria
+
+Gol Darah: O
+
+Alamat
+
+NN Merdeka
+
+RT/RW
+
+001/004
+
+—
+
+Kel/Desa
+
+Buullee
+
+Kecamatan
+
+Bandung
+
+:Hindu
+
+Agama
+
+Status Perkawinan :Belum Kawin
+
+Pekerjaan
+
+...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Adaptive</span></td>
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:12px">PSM 6 Uniform</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">257</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">— PROVINSI JAWABARAT 2.
+Nama | BUDI SANTOSO. ian
+“Jenis Kelamin - Pria .. “Ec GolDarahzO.| . |
+. Alamat 0 JILMerdeka 5. SSS, (A1
+1527 Kel/lDesa . :Buullee : . po Ka sa 2
+SS. Kecamatan :Bandung -. “il .
+. Agama Hindu 0 |
+- Stafus Perkawinan :Belum Kawin . DANA NN ,
+Pekerjaan :Karyawan KaanNn — |
+“Kew...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">CLAHE</span></td>
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 3 Auto</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">161</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">— TempatT al Lahir : i
+- Jenis Kelamin. :
+— Alamat
+: - RT/RW |
+“ “Kel/Desa.
+- “ Kecamatan
+Agama “ :
+“Status Perkawinan : :Belum Kawin AA
+“Pekerjaan Karyawan oa
+“Kewarganegaraan :Indonesia' An NE Ne
+“Beriaku Hingga :SEUMUR HIDUP Se</td>
+            </tr></tbody>
+          </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2>IMG_20260606_225533_1.jpg</h2>
+            <span class="badge">12 Kombinasi</span>
+          </div>
+          <div style="margin-bottom:16px">
+            <a href="grid_IMG_20260606_225533_1.png" target="_blank">
+              <img src="grid_IMG_20260606_225533_1.png" style="max-width:100%;border-radius:8px;border:1px solid #334">
+            </a>
+            <p style="color:#718096;font-size:12px;margin-top:4px">Klik untuk zoom. Grid 4x3: semua kombinasi preprocessing x PSM</p>
+          </div>
+          <h3 style="color:#90cdf4;margin-bottom:8px">Tabel Hasil OCR per Kombinasi (diurutkan skor tertinggi)</h3>
+          <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Preprocessing</th><th>Mode PSM</th><th>Skor</th><th>Teks OCR</th></tr></thead>
+            <tbody>
+            <tr style="background:#1e2240;border-left:4px solid #22d3ee;">
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">CLAHE</span></td>
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:12px">PSM 6 Uniform</span></td>
+              <td style="padding:8px 12px;color:#22d3ee;font-weight:bold">181<span style='color:#22d3ee;font-size:11px'> * TERBAIK</span></td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">OKE EN ANN Na aa NA .N
+la INDONESIA orvwecrnce |
+YsskAM) SURAT IJIN MENGEMUDI. Cc |
+
+BI 2201-4502-1001
+1. BUDI SANTOSO”
+- 2. BANDUNG, 02-02-1936
+| 3. A-PRIA
+4. JL. MERDEKA NO.3
+RT.002/RW.002 DESA aa)
+BANDUNG BANDUNG PA
+5. SWASTA
+6. BANDUNG
+Aan 01/02/2029
+“ ”</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 6px;border-radius:4px;font-size:12px">Otsu</span></td>
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:12px">PSM 6 Uniform</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">179</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">P7 BABA -mam—— - Na
+PETA INDONESIA orvwcucence |
+tetep. SURAT IJIN MENGEMUDI Cc |
+
+3201-4502-100111
+1. BUDI SANTOSO
+- 2. BANDUNG, 02-02-1986
+3. A- PRIA
+4. JL. MERDEKA NO.3
+RT.002/RW.002 DESA 5)
+BANDUNG BANDUNG
+5. SWASTA
+6. BANDUNG
+Aan 01/02/2029
+N 41</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#8b5cf6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Raw Gray</span></td>
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:12px">PSM 6 Uniform</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">172</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">OM —— aan Na
+"yan INDONESIA orvwcucence |
+Y8A( SURAT IJIN MENGEMUDI Cc |
+
+3201-4502-100111
+1. BUDI SANTOSO
+- 5 2. BANDUNG, 02-02-1986
+3. A- PRIA
+4. JL. MERDEKA NO.3
+RT.002/RW.002 DESA aa)
+BANDUNG BANDUNG
+5. SWASTA
+6. BANDUNG
+An 01/02/2029
+“ Ai</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Adaptive</span></td>
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:12px">PSM 6 Uniform</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">168</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Pe. 5b— Na
+Ss MDONESIA snuevene: |
+'52z2/ SURAT IJIN MENGEMUDI C |
+
+| 3201-4502-100111
+1. BUDI SANTOSO
+- S 2. BANDUNG, 02-02-1986
+| 3. A- PRIA
+4. JL. MERDEKA NO.3
+RT.002/RW.002 DESA AN
+
+de BANDUNG BANDUNG
+5. SWASTA 4
+
+? 6. BANDUNG ,
+
+Fa 01/02/2029
+» G ”</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 6px;border-radius:4px;font-size:12px">Otsu</span></td>
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 11 Sparse</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">165</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">DRIVING LICENCE
+
+7
+
+ya INDONESIA
+
+|
+
+Ap .
+
+PA Na PNG II
+
+' SURAT IJIN MENGEMUDI
+
+3201-4502-100111
+
+BUDI SANTOSO
+
+BANDUNG, 02-02-1986
+
+A - PRIA
+
+JL. MERDEKA NO.3
+
+RT.002/RW.002 DESA
+
+BANDUNG BANDUNG
+
+SWASTA
+
+BANDUNG
+
+in
+
+As
+
+01/02/2029</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#8b5cf6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Raw Gray</span></td>
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 11 Sparse</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">162</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">DRIVING LICENCE
+
+f
+
+ya INDONESIA
+
+|
+
+Ap: mag,
+
+1 ala |
+
+' SURAT IJIN MENGEMUDI
+
+3201-4502-100111
+
+BUDI SANTOSO
+
+BANDUNG, 02-02-1936
+
+A - PRIA
+
+JL. MERDEKA NO.3
+
+RT.002/RW.002 DESA
+
+BANDUNG BANDUNG
+
+SWASTA
+
+BANDUNG
+
+ta
+
+3.
+
+01/02/2029</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Adaptive</span></td>
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 11 Sparse</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">160</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">£ Rs uya.
+
+INDONESIA
+
+VAVNO MCENG:
+
+Naa
+
+SD
+
+AU
+
+SURAT IJIN MENGEMUDI
+
+3201-4502-100111
+
+BUDI SANTOSO
+
+BANDUNG, 02-02-1986
+
+A - PRIA
+
+JL. MERDEKA NO.3
+
+RT.002/RW.002 DESA
+
+A
+
+BANDUNG BANDUNG
+
+SWASTA
+
+BANDUNG
+
+DN
+
+FA
+
+01/02/2029
+
+”</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 6px;border-radius:4px;font-size:12px">Otsu</span></td>
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 3 Auto</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">158</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">.ys, INDONESIA
+
+1339. SURAT IJIN MENGEMUDI
+
+PR DN —
+
+2
+
+. BUDI SANTOSO
+
+. BANDUNG, 02-02-1986
+. A - PRIA
+
+. JL. MERDEKA NO.3
+
+RT.002/RW.002 DESA
+BANDUNG BANDUNG
+
+. SWASTA
+. BANDUNG
+
+DRIVING LICENCE
+
+3201-4502-100111
+
+01/02/2029</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#8b5cf6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Raw Gray</span></td>
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 3 Auto</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">155</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">... INDONESIA
+
+"3824 SURAT IJIN MENGEMUDI
+
+PUN
+
+2
+
+. BUDI SANTOSO
+
+. BANDUNG, 02-02-1936
+. A- PRIA
+
+. JL. MERDEKA NO.3
+
+RT.002/RW.002 DESA
+BANDUNG BANDUNG
+
+. SWASTA
+. BANDUNG
+
+DRIVING LICENCE
+
+3201-4502-100111
+
+01/02/2029</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Adaptive</span></td>
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 3 Auto</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">153</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Ts -
+
+, INDONESIA
+
+| SURAT IJIN MENGEMUDI
+
+. BUDI SANTOSO
+
+. BANDUNG, 02-02-1986
+
+-. A- PRIA
+
+. JL. MERDEKA NO.3
+RT.002/RW.002 DESA
+BANDUNG BANDUNG
+
+5. SWASTA
+
+. BANDUNG
+
+PR BN —
+
+2
+
+CRVINS LCENG:
+
+3201-4502-100111
+
+( »
+
+| « |
+2»
+
+01/02/2029</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">CLAHE</span></td>
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 11 Sparse</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">149</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">DRIVING LICENCE
+
+» INDONESIA
+
+TIA
+
+»6) SURAT bondan
+
+.3201-4502-100111
+
+BUDI SANTOSO
+
+BANDUNG, 02-02-1986
+
+A - PRIA
+
+JL. MERDEKA.NO.3
+
+RT.002/RW.002 DESA
+
+1 4
+
+BANDUNG BANDUNG
+
+SWASTA
+
+BANDUNG
+
+ta
+
+"2.
+
+01/02/2029</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">CLAHE</span></td>
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 3 Auto</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">134</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Lb BN—
+
+2 di
+
+DRIVING LICENCE
+
+..3201-4502-100111
+
+. BUDI SANTOSO
+
+. BANDUNG, 02-02-1986
+. A- PRIA
+
+. JL. MERDEKA. NO.3
+
+RT.002/RW.002 DESA
+BANDUNG BANDUNG
+
+- SWASTA
+. BANDUNG
+
+Aa 1
+TT. “3
+p
+
+01/02/2029</td>
+            </tr></tbody>
+          </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2>IMG_20260703_210351_1.jpg</h2>
+            <span class="badge">12 Kombinasi</span>
+          </div>
+          <div style="margin-bottom:16px">
+            <a href="grid_IMG_20260703_210351_1.png" target="_blank">
+              <img src="grid_IMG_20260703_210351_1.png" style="max-width:100%;border-radius:8px;border:1px solid #334">
+            </a>
+            <p style="color:#718096;font-size:12px;margin-top:4px">Klik untuk zoom. Grid 4x3: semua kombinasi preprocessing x PSM</p>
+          </div>
+          <h3 style="color:#90cdf4;margin-bottom:8px">Tabel Hasil OCR per Kombinasi (diurutkan skor tertinggi)</h3>
+          <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Preprocessing</th><th>Mode PSM</th><th>Skor</th><th>Teks OCR</th></tr></thead>
+            <tbody>
+            <tr style="background:#1e2240;border-left:4px solid #22d3ee;">
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Adaptive</span></td>
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 3 Auto</span></td>
+              <td style="padding:8px 12px;color:#22d3ee;font-weight:bold">1216<span style='color:#22d3ee;font-size:11px'> * TERBAIK</span></td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">KARTU KELUARGA
+No. 3211010712248929
+
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan — : DESA MAJU A
+Alamat : JL. MERDEKA NO.3 Kecamatan : KEC. SEJAHTERA A
+RT/RW : 007/004 Kabupaten/Kota : KAB. BANDUNG
+Kode Pos : 40008 Provinsi : JAWA BARAT
+
+Jenis . , Golongan
+Nama Lengkap NIK Temp...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">CLAHE</span></td>
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 11 Sparse</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">1207</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Ng
+
+NS
+
+Nag
+
+at
+
+Si
+
+P3
+
+(5
+
+KARTU KELUARGA
+
+KAN
+
+Ke:
+
+NS
+
+4
+
+TN
+
+PN Ga
+
+Ng
+
+No. 3211010712248929
+
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO
+
+Desa/Kelurahan
+
+DESA MAJU A
+
+Alamat
+
+JL. MERDEKA NO.3
+
+Kecamatan
+
+KEC. SEJAHTERA A
+
+RT/RW
+
+007/004
+
+Kabupaten/Kota
+
+KAB. BANDUNG
+
+Kode Pos
+
+40008
+
+JA...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">CLAHE</span></td>
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:12px">PSM 6 Uniform</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">1081</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Gang, ARTU KELUARGA
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan — : DESAMAJUA
+Alamat : JL. MERDEKA NO.3 Kecamatan : KEC. SEJAHTERA A
+RT/RW : 007/004 Kabupaten/Kota — : KAB. BANDUNG
+Kode Pos : 40008 Provinsi : JAWA BARAT
+Jenis Gol
+onta Temat TP merana
+ae ge EP my Kol Eee nee ea ...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 6px;border-radius:4px;font-size:12px">Otsu</span></td>
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 11 Sparse</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">1000</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">NG
+
+NE
+
+Nana
+
+Sa ae
+
+&amp;4
+
+.—
+
+Ayang
+
+KT
+
+KARTU KELUARGA
+
+Ke
+
+1
+
+OA
+
+”N
+
+s7
+
+Ng
+
+AN
+
+No. 3211010712248929
+
+KEPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO
+
+Desa/Kelurahan
+
+DESA MAJU A
+
+Alamat
+
+JL. MERDEKA NO.3
+
+Kecamatan
+
+KEC. SEJAHTERA A
+
+RT/RW
+
+007/004
+
+Kabupaten/Kota
+
+KAB, BANDUNG
+
+Kode Pos
+
+400...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Adaptive</span></td>
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 11 Sparse</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">958</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Ng
+
+PLN
+
+NS
+
+&amp;
+
+3
+
+KARTU KELUARGA
+
+PL
+
+#,
+
+ASP
+
+5
+
+3
+
+Ya
+
+Id
+
+D2
+
+SI
+
+UAAN
+
+VE)
+
+No. 3211010712248929
+
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO
+
+Desa/Kelurahan
+
+DESA MAJU A
+
+Alamat
+
+JL. MERDEKA NO.3
+
+KEC. SEJAHTERA A
+
+RT/RW
+
+Kecamatan
+
+0071004
+
+Kabupaten/Kota
+
+KAB. BANDUNG
+
+Kode Pos
+
+40008...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#8b5cf6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Raw Gray</span></td>
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 11 Sparse</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">957</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Ng
+
+NS
+
+Nag
+
+2
+
+F4
+
+TA
+
+aa
+
+R7
+
+KARTU KELUARGA
+
+Ke:
+
+G
+
+HAN
+
+WN
+
+s7
+
+Ng
+
+AN
+
+No. 3211010712248929
+
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO
+
+Desa/Kelurahan
+
+DESA MAJU A
+
+Alamat
+
+JL. MERDEKA NO.3
+
+Kecamatan
+
+KEC. SEJAHTERA A
+
+RT/RW
+
+007/004
+
+Kabupaten/Kota
+
+KAB. BANDUNG
+
+Kode Pos
+
+40008
+
+JA...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Adaptive</span></td>
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:12px">PSM 6 Uniform</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">941</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Bawal U KELUARGA
+In Ts 3 29
+NS No. 32110107122489
+| REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan — : DESA MAJU A
+Alamat : JL. MERDEKA NO.3 Kecamatan : KEC. SEJAHTERA A
+RT/RW : 007/004 Kabupaten/Kota — : KAB. BANDUNG
+Kode Pos : 40008 Provinsi : JAWA BARAT
+Jenis . , Golongan
+IT —o...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#8b5cf6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Raw Gray</span></td>
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:12px">PSM 6 Uniform</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">884</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">ta KART
+au U KELUARGA
+Tn No. 3211010 8929
+pa Oo. 321101071224
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan : DESA MAJU A
+Alamat : JL. MERDEKA NO.3 Kecamatan : KEC. SEJAHTERA A
+RT/RW : 007/004 Kabupaten/Kota : KAB. BANDUNG
+Kode Pos : 40008 Provinsi : JAWA BARAT
+Jenis F P Golongan...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 6px;border-radius:4px;font-size:12px">Otsu</span></td>
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:12px">PSM 6 Uniform</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">880</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">Ta KART
+Gary U KELUARGA
+Ti No. 3211010 8929
+pa Oo. 321101071224
+KEPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan : DESA MAJU A
+Alamat : JL. MERDEKA NO.3 Kecamatan : KEC. SEJAHTERA A
+RT/RW : 007/004 Kabupaten/Kota : KAB, BANDUNG
+Kode Pos : 40003 Provinsi : JAWA BARAT
+Jenis , . Golong...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#8b5cf6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">Raw Gray</span></td>
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 3 Auto</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">828</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">KARTU KELUARGA
+No. 3211010712248929
+
+UTARN
+REPUBLIK INDONE .
+me lagi Keluarga : Ta SANTOSO Desa/Kelurahan — : DESA MAJU A
+EIRW Ke Ga OANO-3 Kecamatan - KEC. SEJAHTERA A
+Kode Pos 1  Daga Kabupaten/Kota — : KAB. BANDUNG
+: 40008 Provinsi : JAWA BARAT
+Jenis e T |
+ho. Nama Lengkap NIK Tempat Lahir Ta P3 ...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#f59e0b;color:#000;padding:2px 6px;border-radius:4px;font-size:12px">Otsu</span></td>
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 3 Auto</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">812</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">KARTU KELUARGA
+No. 3211010712248929
+
+UAN
+KEPUBLIK INDONE .
+Nama Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan — : DESA MAJU A
+RTIRW » Ab: MERDEKA NO.3 Kecamatan - KEC. SEJAHTERA A
+Kode Pos . (01004 Kabupaten/Kota — : KAB. BANDUNG
+: 400038 Provinsi : JAWA BARAT
+Jenis | Tr |
+ho Nama Lengkap NIK Tempat...</td>
+            </tr>
+            <tr style="background:#1e2240;">
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">CLAHE</span></td>
+              <td style="padding:8px 12px"><span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px">PSM 3 Auto</span></td>
+              <td style="padding:8px 12px;color:#a0aec0;font-weight:normal">773</td>
+              <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#cbd5e0;white-space:pre-wrap;max-width:500px">KARTU KELUARGA
+No. 3211010712248929
+
+UTARN
+REPUBLIK INDONENAma Kepala Keluarga : BUDI SANTOSO Desa/Kelurahan — : DESA MAJU A
+Alamat 1 JL. MERDEKA No.3 Kecamatan : KEC. SEJAHTERA A
+RT/RW : 007/004 Kabupaten/Kota : KAB, BANDUNG
+Kode Pos : 40008 Provinsi : JAWA BARAT
+
+Jenis Tanggal Solongan
+ho | Nama L...</td>
+            </tr></tbody>
+          </table>
+          </div>
+        </div>
+</div>
+
+<div class="footer">
+  Laporan dibuat oleh <strong>demo_preprocessing_psm.py</strong> —
+  Sistem OCR Dokumen v6.0 — 25 July 2026, 22:03
+</div>
+</body>
+</html>

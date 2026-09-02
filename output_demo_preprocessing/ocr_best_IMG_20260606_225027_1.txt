@@ -1,0 +1,287 @@
+HASIL OCR TERBAIK — IMG_20260606_225027_1.jpg
+============================================================
+
+Kombinasi Terbaik: CLAHE x PSM 6
+Skor             : 352
+
+————————————————————————————————————————————————————————————
+at Ot ai ae Kan La Su . ...
+: 3 Ns TT PNG VINSI JAWA: ARA
+IK “53211010202861003..—....
+2 AO “3 2 ANN organ NAN ga EU Ba Be Ia at Lema NA
+.-Nama “ BUDI SANTOSO Me an
+Temp gl Lahir :BANDUNG, 0 021 : NO 2 sana BEN 5
+- Jenis Kelamin... #Priad 5 Gol ON ya :
+C i — Ke -. MAAN EN ON AA KAA MK en TA TOT. AAN ca
+(25£-- KeliDesa. , :Buullee.. “me ea na
+Oa sop k banda Nett “aa - 1 ih pisiksbd me Aa sn , .
+. ara - " « Fc va Kn 3 In ”. -
+- “Pekerjaan :Karyawan NN Me na Ta :
+“Kewarganegaraan :Indonesia — Nu Naa
+Beriaku Hingga :SEUMUR HIDUP : St Tapa
+“sn J
+
+============================================================
+SEMUA KOMBINASI (diurutkan skor tertinggi):
+
+[clahe x PSM 6] skor=352
+at Ot ai ae Kan La Su . ...
+: 3 Ns TT PNG VINSI JAWA: ARA
+IK “53211010202861003..—....
+2 AO “3 2 ANN organ NAN ga EU Ba Be Ia at Lema NA
+.-Nama “ BUDI SANTOSO Me an
+Temp gl Lahir :BANDUNG, 0 021 : NO 
+... (dipotong)
+————————————————————————————————————————
+[clahe x PSM 11] skor=332
+Te
+
+nm
+
+apakan
+
+Ka
+
+Ni
+
+men arak
+
+skalian
+
+Kn
+
+Fei
+
+Dania
+
+2. 3
+
+1
+
+Buta
+
+-.
+
+'&
+
+K
+
+y)
+
+Sa
+
+B
+
+Patuh
+
+Ke
+
+Ka
+
+ENB
+
+atas
+
+Pena
+
+NIK
+
+-
+
+321101
+
+86100
+
+3
+
+AN
+
+BUDI! SANT
+
+aU
+
+OP .
+
+Usa
+
+- Tempatit gl L
+... (dipotong)
+————————————————————————————————————————
+[adaptive x PSM 11] skor=330
+TA KPA “WA
+
+EL AA an — am L — ea LE ——
+
+Iwnggn memes
+
+N
+
+peda
+
+“PROVINSI JAWA: (BARAT “
+
+Ka
+
+KABUPATEN BANDUNG
+
+NIK
+
+:321101 0202561 003
+
+ana
+
+Nama
+
+:BUDI SANTOSO
+
+Tempat/Tgl Lahir, #BANDUNG, 02:02: 1
+... (dipotong)
+————————————————————————————————————————
+[adaptive x PSM 3] skor=305
+Untung Ham Sa mt ae ke  —— —£
+— mai PPA PANEN . -
+
+PROVINSI JAWA BARAT.
+
+Men
+
+NIK :3211010202801003 “2
+
+Nama - BUDI SANTOSO”
+ Tempat/Tgl Lahir #BANDUNG, £ 02:02: 1986: na
+- Jenis Kelamin :  :Pria ...:
+... (dipotong)
+————————————————————————————————————————
+[raw_gray x PSM 3] skor=288
+PROVINSI JAWA BARAT
+KABUPATEN menta .
+
+NIK :8211010202861003
+Nama :BUDI SANTOSO
+Tempat/Tgl Lahir :BANDUNG, 02-02- 1986 Ser
+- Jenis Kelamin :Pria 2S Gol Darah: O
+“Alamat Jl. Merdeka PAGE MN
+RT/RW :001/
+... (dipotong)
+————————————————————————————————————————
+[raw_gray x PSM 6] skor=286
+Tong SN
+. KABUPATEN BANDUNG
+NIK :3211010202861993
+Nama :BUDI SANTOSO "
+Tempat/Tgl Lahir :BANDUNG, 02-02-1986 an BE SN
+Jenis Kelamin . :Pria TN Gol Darah: O
+“Alamat sJ.Merdela 3S
+—RTIRW :001/004 Te
+-  
+... (dipotong)
+————————————————————————————————————————
+[otsu x PSM 3] skor=284
+PROVINSI JAWA BARAT
+KABUPATEN BANDUNG .
+
+NIK :8211010202861003
+Nama :BUDI SANTOSO
+Tempat/Tgi Lahir :BANDUNG, 02-02- 1986 NN
+- Jenis Kelamin :Pria Tt. Gol Darah:-0
+“Alamat :Jl. Merdeka '. | Os
+RT/RW :0
+... (dipotong)
+————————————————————————————————————————
+[otsu x PSM 6] skor=283
+Tn N
+— KABUPATEN BANDUNG.
+NIK :3211010202861993
+Nama :BUDI SANTOSO Ten
+Tempat/Tgl Lahir :BANDUNG, 02-02-1986 NN |
+Jenis Kelamin — :Pria Na Gol Darah: O
+-Alamat :Jl.Merdeka 3S
+— RTIRW :001/004 OS
+- Kel
+... (dipotong)
+————————————————————————————————————————
+[otsu x PSM 11] skor=278
+PROVINSI JAWA BARAT
+
+KABUPATEN BANDUNG
+
+NIK
+
+:321101 0202861 003.
+
+Nama
+
+:BUDI SANTOSO
+
+Tempat/Tgi Lahir :BANDUNG, 02-02- 1986
+
+Jenis Kelamin
+
+:Pria
+
+Gol Darah:-O
+
+Alamat
+
+sJl. Merdeka :
+
+RT/RW
+
+001/0
+... (dipotong)
+————————————————————————————————————————
+[raw_gray x PSM 11] skor=277
+PROVINSI JAWA BARAT
+
+KABUPATEN BANDUNG
+
+NIK
+
+:321101 0202861 003.
+
+Nama
+
+:BUDI SANTOSO
+
+Tempat/Tgl Lahir :BANDUNG, 02-02- 1986
+
+Jenis Kelamin
+
+:Pria
+
+Gol Darah: O
+
+Alamat
+
+NN Merdeka
+
+RT/RW
+
+001/004
+
+
+... (dipotong)
+————————————————————————————————————————
+[adaptive x PSM 6] skor=257
+— PROVINSI JAWABARAT 2.
+Nama | BUDI SANTOSO. ian
+“Jenis Kelamin - Pria .. “Ec GolDarahzO.| . |
+. Alamat 0 JILMerdeka 5. SSS, (A1
+1527 Kel/lDesa . :Buullee : . po Ka sa 2
+SS. Kecamatan :Bandung -. “il 
+... (dipotong)
+————————————————————————————————————————
+[clahe x PSM 3] skor=161
+— TempatT al Lahir : i
+- Jenis Kelamin. :
+— Alamat
+: - RT/RW |
+“ “Kel/Desa.
+- “ Kecamatan
+Agama “ :
+“Status Perkawinan : :Belum Kawin AA
+“Pekerjaan Karyawan oa
+“Kewarganegaraan :Indonesia' An NE Ne
+“B
+... (dipotong)
+————————————————————————————————————————

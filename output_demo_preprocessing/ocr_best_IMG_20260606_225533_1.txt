@@ -1,0 +1,330 @@
+HASIL OCR TERBAIK — IMG_20260606_225533_1.jpg
+============================================================
+
+Kombinasi Terbaik: CLAHE x PSM 6
+Skor             : 181
+
+————————————————————————————————————————————————————————————
+OKE EN ANN Na aa NA .N
+la INDONESIA orvwecrnce |
+YsskAM) SURAT IJIN MENGEMUDI. Cc |
+
+BI 2201-4502-1001
+1. BUDI SANTOSO”
+- 2. BANDUNG, 02-02-1936
+| 3. A-PRIA
+4. JL. MERDEKA NO.3
+RT.002/RW.002 DESA aa)
+BANDUNG BANDUNG PA
+5. SWASTA
+6. BANDUNG
+Aan 01/02/2029
+“ ”
+
+============================================================
+SEMUA KOMBINASI (diurutkan skor tertinggi):
+
+[clahe x PSM 6] skor=181
+OKE EN ANN Na aa NA .N
+la INDONESIA orvwecrnce |
+YsskAM) SURAT IJIN MENGEMUDI. Cc |
+
+BI 2201-4502-1001
+1. BUDI SANTOSO”
+- 2. BANDUNG, 02-02-1936
+| 3. A-PRIA
+4. JL. MERDEKA NO.3
+RT.002/RW.002 DESA aa)
+
+... (dipotong)
+————————————————————————————————————————
+[otsu x PSM 6] skor=179
+P7 BABA -mam—— - Na
+PETA INDONESIA orvwcucence |
+tetep. SURAT IJIN MENGEMUDI Cc |
+
+3201-4502-100111
+1. BUDI SANTOSO
+- 2. BANDUNG, 02-02-1986
+3. A- PRIA
+4. JL. MERDEKA NO.3
+RT.002/RW.002 DESA 5)
+BANDUN
+... (dipotong)
+————————————————————————————————————————
+[raw_gray x PSM 6] skor=172
+OM —— aan Na
+"yan INDONESIA orvwcucence |
+Y8A( SURAT IJIN MENGEMUDI Cc |
+
+3201-4502-100111
+1. BUDI SANTOSO
+- 5 2. BANDUNG, 02-02-1986
+3. A- PRIA
+4. JL. MERDEKA NO.3
+RT.002/RW.002 DESA aa)
+BANDUNG BAND
+... (dipotong)
+————————————————————————————————————————
+[adaptive x PSM 6] skor=168
+Pe. 5b— Na
+Ss MDONESIA snuevene: |
+'52z2/ SURAT IJIN MENGEMUDI C |
+
+| 3201-4502-100111
+1. BUDI SANTOSO
+- S 2. BANDUNG, 02-02-1986
+| 3. A- PRIA
+4. JL. MERDEKA NO.3
+RT.002/RW.002 DESA AN
+
+de BANDUNG BAN
+... (dipotong)
+————————————————————————————————————————
+[otsu x PSM 11] skor=165
+DRIVING LICENCE
+
+7
+
+ya INDONESIA
+
+|
+
+Ap .
+
+PA Na PNG II
+
+' SURAT IJIN MENGEMUDI
+
+3201-4502-100111
+
+BUDI SANTOSO
+
+BANDUNG, 02-02-1986
+
+A - PRIA
+
+JL. MERDEKA NO.3
+
+RT.002/RW.002 DESA
+
+BANDUNG BANDUNG
+
+S
+... (dipotong)
+————————————————————————————————————————
+[raw_gray x PSM 11] skor=162
+DRIVING LICENCE
+
+f
+
+ya INDONESIA
+
+|
+
+Ap: mag,
+
+1 ala |
+
+' SURAT IJIN MENGEMUDI
+
+3201-4502-100111
+
+BUDI SANTOSO
+
+BANDUNG, 02-02-1936
+
+A - PRIA
+
+JL. MERDEKA NO.3
+
+RT.002/RW.002 DESA
+
+BANDUNG BANDUNG
+
+SW
+... (dipotong)
+————————————————————————————————————————
+[adaptive x PSM 11] skor=160
+£ Rs uya.
+
+INDONESIA
+
+VAVNO MCENG:
+
+Naa
+
+SD
+
+AU
+
+SURAT IJIN MENGEMUDI
+
+3201-4502-100111
+
+BUDI SANTOSO
+
+BANDUNG, 02-02-1986
+
+A - PRIA
+
+JL. MERDEKA NO.3
+
+RT.002/RW.002 DESA
+
+A
+
+BANDUNG BANDUNG
+
+SWASTA
+
+
+... (dipotong)
+————————————————————————————————————————
+[otsu x PSM 3] skor=158
+.ys, INDONESIA
+
+1339. SURAT IJIN MENGEMUDI
+
+PR DN —
+
+2
+
+. BUDI SANTOSO
+
+. BANDUNG, 02-02-1986
+. A - PRIA
+
+. JL. MERDEKA NO.3
+
+RT.002/RW.002 DESA
+BANDUNG BANDUNG
+
+. SWASTA
+. BANDUNG
+
+DRIVING LICENCE
+
+3
+... (dipotong)
+————————————————————————————————————————
+[raw_gray x PSM 3] skor=155
+... INDONESIA
+
+"3824 SURAT IJIN MENGEMUDI
+
+PUN
+
+2
+
+. BUDI SANTOSO
+
+. BANDUNG, 02-02-1936
+. A- PRIA
+
+. JL. MERDEKA NO.3
+
+RT.002/RW.002 DESA
+BANDUNG BANDUNG
+
+. SWASTA
+. BANDUNG
+
+DRIVING LICENCE
+
+3201-45
+... (dipotong)
+————————————————————————————————————————
+[adaptive x PSM 3] skor=153
+Ts -
+
+, INDONESIA
+
+| SURAT IJIN MENGEMUDI
+
+. BUDI SANTOSO
+
+. BANDUNG, 02-02-1986
+
+-. A- PRIA
+
+. JL. MERDEKA NO.3
+RT.002/RW.002 DESA
+BANDUNG BANDUNG
+
+5. SWASTA
+
+. BANDUNG
+
+PR BN —
+
+2
+
+CRVINS LCENG:
+
+32
+... (dipotong)
+————————————————————————————————————————
+[clahe x PSM 11] skor=149
+DRIVING LICENCE
+
+» INDONESIA
+
+TIA
+
+»6) SURAT bondan
+
+.3201-4502-100111
+
+BUDI SANTOSO
+
+BANDUNG, 02-02-1986
+
+A - PRIA
+
+JL. MERDEKA.NO.3
+
+RT.002/RW.002 DESA
+
+1 4
+
+BANDUNG BANDUNG
+
+SWASTA
+
+BANDUNG
+
+ta
+
+"2
+... (dipotong)
+————————————————————————————————————————
+[clahe x PSM 3] skor=134
+Lb BN—
+
+2 di
+
+DRIVING LICENCE
+
+..3201-4502-100111
+
+. BUDI SANTOSO
+
+. BANDUNG, 02-02-1986
+. A- PRIA
+
+. JL. MERDEKA. NO.3
+
+RT.002/RW.002 DESA
+BANDUNG BANDUNG
+
+- SWASTA
+. BANDUNG
+
+Aa 1
+TT. “3
+p
+
+01/02/20
+... (dipotong)
+————————————————————————————————————————

@@ -1,5 +1,5 @@
 # 🗂️ SiODI — Sistem OCR Dokumen Identitas
-## Versi GUI Desktop v5.7
+## Versi GUI Desktop v6.0
 
 **SiODI** adalah aplikasi desktop modern untuk otomatisasi penamaan dan pengarsipan dokumen identitas digital menggunakan OCR multi-strategi dan NLP rule-based.
 
@@ -29,7 +29,7 @@
 | **Ekstraksi Field** | Nama, NIK, Tempat/Tgl Lahir, Jenis Kelamin, Alamat, No. KK, No. SIM |
 | **Template Fleksibel** | Nama file & subfolder dapat dikustomisasi dengan variabel dinamis |
 | **Evaluasi Ilmiah** | Precision, Recall, F1-Score per field vs. ground truth CSV |
-| **Laporan HTML** | Laporan interaktif lengkap dengan tabel, grafik, dan statistik |
+| **Laporan HTML** | Laporan interaktif dengan tombol Buka File dan Download melalui server lokal otomatis (tanpa XAMPP/Laragon) |
 | **Export Metadata** | JSON dan CSV untuk setiap file yang diproses |
 | **Mode Dry-Run** | Preview rencana pengarsipan tanpa memindahkan file |
 | **GUI Modern** | CustomTkinter — tampilan profesional, support Light/Dark mode |
@@ -139,7 +139,7 @@ Halaman utama untuk memproses seluruh folder dokumen.
 4. **Ground Truth CSV** (opsional, untuk evaluasi F1-Score)
 5. Klik **▶ MULAI PROSES**
 6. Pantau progress bar dan log output secara real-time
-7. Setelah selesai, klik **🌐 Buka Laporan HTML** untuk melihat laporan lengkap
+7. Setelah selesai, klik **🌐 Buka Laporan HTML** untuk melihat laporan lengkap. SiODI akan menjalankan server lokal otomatis; gunakan **Buka File** untuk melihat dokumen atau **Download** untuk mengunduhnya.
 
 **Output yang dihasilkan:**
 ```

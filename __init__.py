@@ -1,6 +1,6 @@
 """
-Sistem Otomatisasi Penamaan dan Pengarsipan Dokumen Identitas Digital
-Berbasis OCR Multi-Strategi dan NLP Rule-Based  (v5.7)
+SiODI (Sistem OCR Dokumen Identitas)
+Berbasis OCR Multi-Strategi dan NLP Rule-Based  (v6.0)
 
 Package Structure:
     config.py       — Konstanta, template penamaan, konfigurasi JSON/YAML
@@ -9,6 +9,7 @@ Package Structure:
     extractor.py    — Klasifikasi KTP/KK/SIM, ekstraksi field, voting konsensus
     file_manager.py — Build path output, pindah file, anti-duplikat
     evaluator.py    — Ekspor JSON/CSV, F1-Score, efisiensi waktu, laporan HTML
+    report_server.py — Server HTTP lokal untuk membuka dan mengunduh file dari laporan HTML
     pipeline.py     — Batch processing end-to-end
     debug_demo.py   — Mode debug satu file + mode demo sintetik
     main.py         — Entry point CLI (argparse)
